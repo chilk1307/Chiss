@@ -32,7 +32,8 @@ bị loại khỏi git vì vượt giới hạn 100 MB của GitHub. Tài liệu
 Quy tắc chung:
 
 - Chỉ muốn **đánh giá bằng model có sẵn** → chỉ cần mục 2 và 3 (không cần các file ở mục 4).
-- Muốn **huấn luyện lại / tái hiện** → làm lần lượt 4.1 → 4.2 → 4.3 → 4.4.
+- Muốn **dùng ngay các file đã sinh sẵn của nhóm** → tải từ Google Drive (mục 4.0), khỏi chạy lại 4.1 → 4.4.
+- Muốn **huấn luyện lại / tái hiện từ đầu** → làm lần lượt 4.1 → 4.2 → 4.3 → 4.4.
 
 ---
 
@@ -86,6 +87,46 @@ Truyền đường dẫn gốc của dataset qua tham số `--dataset-path`.
 ---
 
 ## 4. Lấy từng file còn thiếu
+
+### 4.0. Tải nhanh từ Google Drive của nhóm (khuyên dùng)
+
+Các file nặng đã sinh sẵn (GPT phrases, similar concepts, OTI pseudo-tokens, checkpoint phi...) được public tại:
+
+**https://drive.google.com/drive/folders/1EZZBD4lZxgVf65RhwHEM8eHAFYPSiZti?usp=sharing**
+
+**Cách 1 — tải bằng trình duyệt:** mở link, chọn thư mục/file cần, bấm *Download*, giải nén rồi đặt đúng đường dẫn như bảng dưới.
+
+**Cách 2 — tải bằng dòng lệnh với `gdown`:**
+
+```sh
+pip install gdown
+gdown --folder "https://drive.google.com/drive/folders/1EZZBD4lZxgVf65RhwHEM8eHAFYPSiZti" -O drive_download
+```
+
+Sau khi tải xong, đặt từng thư mục vào `data/` theo bảng:
+
+| Thư mục trên Drive | Đặt vào |
+|---|---|
+| `GPT_phrases/` | `data/GPT_phrases/` |
+| `similar_concepts/` | `data/similar_concepts/` |
+| `oti_pseudo_tokens/` | `data/oti_pseudo_tokens/` |
+| `phi_models/` | `data/phi_models/` |
+
+Ví dụ (PowerShell):
+
+```powershell
+Copy-Item drive_download\GPT_phrases\*        data\GPT_phrases\        -Recurse -Force
+Copy-Item drive_download\similar_concepts\*   data\similar_concepts\   -Recurse -Force
+Copy-Item drive_download\oti_pseudo_tokens\*  data\oti_pseudo_tokens\  -Recurse -Force
+Copy-Item drive_download\phi_models\*         data\phi_models\         -Recurse -Force
+```
+
+Lưu ý:
+
+- Tên thư mục experiment trên Drive có thể là `oti_B32`, `phi_B32` (chữ hoa). Khi chạy script, truyền `--exp-name` /
+  `--oti-exp-name` / `--phi-checkpoint-name` **đúng tên thư mục** bạn đã đặt vào `data/`, và nhớ phân biệt hoa/thường trên Linux.
+- Nếu Drive báo vượt giới hạn tải (quota), bấm *Add shortcut to Drive* hoặc *Make a copy* rồi tải từ Drive của bạn.
+- Sau khi đặt xong, kiểm tra lại bằng mục 5.
 
 ### 4.1. GPT phrases (`concept_to_phrases.pkl`)
 
