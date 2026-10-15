@@ -13,3 +13,4 @@ SEARLE-main/data/similar_concepts/
 outputs/*
 !outputs/scripts/
 !outputs/prev_results_oct5/
+!outputs/submissions/

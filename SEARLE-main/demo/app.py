@@ -287,6 +287,35 @@ def parse_results() -> dict:
     return out
 
 
+SUBMISSION_DIRS = [OUTPUTS_DIR / "submissions", REPO_DIR / "data" / "test_submissions"]
+SUBMISSION_KINDS = {"cirr_recall": "CIRR", "cirr_recall_subset": "CIRR subset", "circo": "CIRCO"}
+_submission_cache: dict[tuple, dict] = {}
+
+
+def scan_submissions() -> list[dict]:
+    """Tìm file nộp test do generate_test_submission.py sinh ra (CIRR có trường 'metric', CIRCO thì không)."""
+    found = []
+    for root in SUBMISSION_DIRS:
+        if not root.is_dir():
+            continue
+        for p in sorted(root.rglob("*.json")):
+            key = (str(p), p.stat().st_mtime)
+            if key not in _submission_cache:
+                try:
+                    data = json.loads(p.read_text(encoding="utf-8"))
+                except Exception:  # noqa: BLE001
+                    continue
+                if not isinstance(data, dict):
+                    continue
+                metric = data.get("metric")
+                kind = f"cirr_{metric}" if metric else "circo"
+                n = sum(isinstance(v, list) for v in data.values())
+                _submission_cache[key] = {"file": p.name, "kind": kind, "queries": n}
+            if _submission_cache[key]["kind"] in SUBMISSION_KINDS:
+                found.append(_submission_cache[key])
+    return found
+
+
 def _ratio(a, b):
     return round(a / b * 100, 1) if a is not None and b else None
 
@@ -318,6 +347,13 @@ def build_assessment() -> dict:
     assoc_csv = OUTPUTS_DIR / "similar_concepts/imagenet/test/ViT-B32_top_250_ensembling_image_texts.csv"
     fiq, circo = res["fiq"].get("ours", {}), res["circo"].get("ours")
     full_oti = n_oti >= 100000
+    subs = scan_submissions()
+    sub_kinds = {s["kind"] for s in subs}
+    sub_status = "done" if sub_kinds >= set(SUBMISSION_KINDS) else ("partial" if sub_kinds else "missing")
+    sub_missing = [SUBMISSION_KINDS[k] for k in SUBMISSION_KINDS if k not in sub_kinds]
+    sub_evidence = "; ".join(f"{s['file']} ({SUBMISSION_KINDS[s['kind']]}, {s['queries']:,} truy vấn)" for s in subs)
+    if subs and sub_missing:
+        sub_evidence += " · thiếu: " + ", ".join(sub_missing)
 
     items = [
         {"id": "gpt", "step": "0 · Sinh cụm từ GPT cho các khái niệm", "group": "core", "credit": 1.0,
@@ -344,7 +380,8 @@ def build_assessment() -> dict:
          "credit": 1.0 if circo else 0.0, "status": "done" if circo else "missing",
          "evidence": f"mAP@5 = {circo['map'][0]:.2f}, Recall@50 = {circo['recall'][3]:.2f}" if circo else "chưa có"},
         {"id": "test", "step": "4b · Sinh file nộp test (CIRR / CIRCO server)", "group": "extra",
-         "credit": 0.0, "status": "missing", "evidence": "chưa chạy generate_test_submission.py"},
+         "credit": {"done": 1.0, "partial": 0.5, "missing": 0.0}[sub_status], "status": sub_status,
+         "evidence": sub_evidence or "chưa chạy generate_test_submission.py"},
         {"id": "xl", "step": "SEARLE-XL (CLIP ViT-L/14)", "group": "extra",
          "credit": 0.0, "status": "missing", "evidence": "chỉ có phi_B32"},
         {"id": "otib", "step": "SEARLE-OTI trực tiếp trên benchmark", "group": "extra",
