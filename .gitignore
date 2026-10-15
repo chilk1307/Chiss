@@ -10,4 +10,6 @@ SEARLE-main/data/GPT_phrases/
 SEARLE-main/data/oti_pseudo_tokens/
 SEARLE-main/data/phi_models/
 SEARLE-main/data/similar_concepts/
-outputs/
+outputs/*
+!outputs/scripts/
+!outputs/prev_results_oct5/

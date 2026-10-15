@@ -1,0 +1,14 @@
+Target pad preprocess pipeline is used
+CIRR val dataset in relative mode initialized
+Extracting tokens using phi model
+Eval type = phi 	 exp name = phi_b32 	
+CIRR val dataset in classic mode initialized
+extracting image features CIRRDataset - val
+CIRR val dataset in relative mode initialized
+cirr_recall_at1 = 22.60
+cirr_recall_at5 = 52.45
+cirr_recall_at10 = 66.23
+cirr_recall_at50 = 88.97
+cirr_group_recall_at1 = 55.58
+cirr_group_recall_at2 = 77.16
+cirr_group_recall_at3 = 88.18

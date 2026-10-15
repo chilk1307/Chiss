@@ -1,0 +1,26 @@
+Target pad preprocess pipeline is used
+-> Đã lọc còn 2113 mẫu có đầy đủ ảnh trên đĩa
+FashionIQ val - ['dress', 'toptee', 'shirt'] dataset in relative mode initialized
+Extracting tokens using phi model
+Eval type = phi 	 exp name = phi_b32 	
+-> Đã lọc còn 239 mẫu có đầy đủ ảnh trên đĩa
+FashionIQ val - ['shirt'] dataset in classic mode initialized
+extracting image features FashionIQDataset - val
+-> Đã lọc còn 239 mẫu có đầy đủ ảnh trên đĩa
+FashionIQ val - ['shirt'] dataset in relative mode initialized
+shirt_fiq_recall_at10 = 41.00
+shirt_fiq_recall_at50 = 62.76
+
+
+-> Đã lọc còn 1861 mẫu có đầy đủ ảnh trên đĩa
+FashionIQ val - ['dress'] dataset in classic mode initialized
+extracting image features FashionIQDataset - val
+-> Đã lọc còn 1861 mẫu có đầy đủ ảnh trên đĩa
+FashionIQ val - ['dress'] dataset in relative mode initialized
+dress_fiq_recall_at10 = 17.73
+dress_fiq_recall_at50 = 38.10
+
+
+-> Đã lọc còn 13 mẫu có đầy đủ ảnh trên đĩa
+FashionIQ val - ['toptee'] dataset in classic mode initialized
+extracting image features FashionIQDataset - val
