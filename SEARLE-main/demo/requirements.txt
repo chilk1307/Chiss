@@ -1,0 +1,11 @@
+torch
+torchvision
+flask
+pandas
+pillow
+numpy
+openai-clip
+ftfy
+regex
+tqdm
+setuptools<81

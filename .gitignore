@@ -1,0 +1,13 @@
+﻿# large artifacts (too big for GitHub)
+*.pkl
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+*.safetensors
+SEARLE-main/data/GPT_phrases/
+SEARLE-main/data/oti_pseudo_tokens/
+SEARLE-main/data/phi_models/
+SEARLE-main/data/similar_concepts/
+outputs/
