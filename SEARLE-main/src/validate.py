@@ -21,6 +21,9 @@ def cirr_compute_val_metrics(relative_val_dataset: Dataset, clip_model: CLIP, in
     Compute the retrieval metrics on the CIRR validation set given the dataset, pseudo tokens and the reference names.
     Kept for train_phi.py; the computation is the one of retrieval_core.
     """
+    # The original implementation iterated a DataLoader here, which draws one number from the global random generator
+    # (its base seed). Draw it too, so that a training run keeps exactly the random stream of the original code.
+    torch.empty((), dtype=torch.int64).random_()
     queries = core.cirr_queries(relative_val_dataset)
     predicted_features = core.encode_token_queries(clip_model, queries,
                                                    core.token_dict(ref_names_list, pseudo_tokens))

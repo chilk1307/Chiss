@@ -1,12 +1,17 @@
 import json
+import math
 import os
 import pickle
 import random
 from argparse import ArgumentParser
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal, Tuple, Dict, List, Set
+from typing import Literal, Tuple, Dict, List, Set, Optional
 
-from comet_ml import Experiment
+try:
+    from comet_ml import Experiment
+except ImportError:  # Comet is only used for logging
+    Experiment = None
 import clip
 import numpy as np
 import pandas as pd
@@ -20,12 +25,59 @@ from tqdm import tqdm
 from data_utils import targetpad_transform, PROJECT_ROOT
 from datasets import CIRRDataset, ImageNetDataset
 from encode_with_pseudo_tokens import encode_with_pseudo_tokens
+from gpt_phrases_utils import CONCEPT_FILTER, PHRASE_MATCH, prepare_phrases, replace_concept
 from phi import Phi
 from utils import collate_fn, extract_image_features, device, CustomTensorDataset, contrastive_loss, \
     extract_pseudo_tokens_with_phi
 from validate import cirr_compute_val_metrics
 
 torch.multiprocessing.set_sharing_strategy('file_system')
+
+
+class NoExperiment:
+    """
+    Stand-in for comet_ml.Experiment when comet_ml is not installed: every call does nothing
+    """
+
+    def __getattr__(self, name):
+        return lambda *args, **kwargs: None
+
+    @contextmanager
+    def train(self):
+        yield
+
+    @contextmanager
+    def validate(self):
+        yield
+
+
+class DegradedFeatures:
+    """
+    CLIP features of degraded versions of the training images, precomputed by tools/precompute_degraded_features.py
+    (plan 03, section 3.4). With probability p the clean feature of an image is replaced by the feature of one of its
+    degraded versions (chosen uniformly); the distillation target stays the OTI token of the clean image.
+    """
+
+    def __init__(self, directory: str):
+        directory = Path(directory)
+        with open(directory / 'meta.json') as f:
+            meta = json.load(f)
+        with open(directory / 'image_names.pkl', 'rb') as f:
+            names = pickle.load(f)
+        self.row = {n: i for i, n in enumerate(names)}
+        self.kinds = [k for k in meta['degradations'] if k != 'none']
+        self.features = {k: torch.load(directory / f"{k.replace(':', '')}.pt", map_location='cpu') for k in self.kinds}
+        print(f"Degraded features: {len(self.kinds)} versions of {len(names)} images from {directory}")
+
+    def replace(self, features: torch.Tensor, names: List[str], probability: float) -> torch.Tensor:
+        replace = torch.rand(len(names)) < probability
+        choice = torch.randint(len(self.kinds), (len(names),))
+        features = features.clone()
+        for i in torch.nonzero(replace).flatten().tolist():
+            row = self.row.get(names[i])
+            if row is not None:
+                features[i] = self.features[self.kinds[int(choice[i])]][row].to(features.dtype)
+        return features
 
 
 def update_train_running_results(train_running_results, total_loss: torch.Tensor, gpt_loss: torch.Tensor,
@@ -82,6 +134,37 @@ def save_checkpoint(name: str, epoch: int, model_to_save: Phi, optimizer: torch.
     }, str(models_path / f'{name}.pt'))
 
 
+def save_resume_state(training_path: Path, epoch: int, phi: Phi, optimizer: optim.Optimizer, scaler: GradScaler,
+                      scheduler, training_log_frame: pd.DataFrame, validation_log_frame: pd.DataFrame) -> None:
+    """
+    Everything needed to continue an interrupted training with --resume: weights, optimizer, grad scaler, learning
+    rate schedule, random generators and the metrics logged so far
+    """
+    path = training_path / "checkpoints" / "resume.pt"
+    path.parent.mkdir(exist_ok=True, parents=True)
+    state = {
+        'epoch': epoch,
+        phi.__class__.__name__: phi.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'scaler': scaler.state_dict(),
+        'scheduler': scheduler.state_dict() if scheduler is not None else None,
+        'rng': {'torch': torch.get_rng_state(), 'random': random.getstate(), 'numpy': np.random.get_state(),
+                'cuda': torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None},
+        'training_log': training_log_frame.to_dict('records'),
+        'validation_log': validation_log_frame.to_dict('records'),
+    }
+    tmp = path.with_suffix('.tmp')
+    torch.save(state, tmp)
+    os.replace(tmp, path)
+
+
+def load_resume_state(path: Path):
+    try:
+        return torch.load(path, map_location='cpu', weights_only=False)
+    except TypeError:  # torch < 1.13 has no weights_only argument
+        return torch.load(path, map_location='cpu')
+
+
 def get_model_oti_tokens_preprocess(args, clip_model_name: str, exp_name: str, gpt_exp_name: str, oti_exp_name: str,
                                     preprocess_type: Literal['clip', 'targetpad']) -> \
         Tuple[CLIP, callable, Path, Dict[str, List[str]], Set[str], List[str], torch.Tensor]:
@@ -91,7 +174,7 @@ def get_model_oti_tokens_preprocess(args, clip_model_name: str, exp_name: str, g
 
     training_path: Path = Path(PROJECT_ROOT / 'data' / "phi_models" / exp_name)
 
-    if training_path.exists():
+    if training_path.exists() and not args.resume:
         print("BE CAREFUL: training path already exists, you are about to overwrite it", flush=True)
 
     # Save all the hyperparameters on a file
@@ -114,23 +197,19 @@ def get_model_oti_tokens_preprocess(args, clip_model_name: str, exp_name: str, g
         raise ValueError(f"preprocess_type should be either clip or targetpad, got {preprocess_type}")
 
     # Load GPT phrases for regularization
-    concepts_to_filter_out = set()
     with open(PROJECT_ROOT / 'data' / 'GPT_phrases' / gpt_exp_name / 'concept_to_phrases.pkl', 'rb') as f:
         concept_to_phrases = pickle.load(f)
-    print('filtering problematic concepts')
-    for k, v in tqdm(concept_to_phrases.items()):
-        for phrase in v:
-            p = phrase.replace(k, " $ ", 1)
-            if '$' not in p:
-                concepts_to_filter_out.add(k)
+    concept_to_phrases, concepts_to_filter_out = prepare_phrases(concept_to_phrases, args.concept_filter,
+                                                                 args.phrase_match)
 
     # Load OTI tokens
     with open(PROJECT_ROOT / 'data' / 'oti_pseudo_tokens' / 'imagenet' / 'test' / oti_exp_name / f"image_names.pkl",
               'rb') as f:
         names_list = pickle.load(f)
 
+    token_file = 'ema_oti_pseudo_tokens.pt' if args.oti_token_type == 'ema' else 'oti_pseudo_tokens.pt'
     oti_tokens = torch.load(
-        PROJECT_ROOT / 'data' / 'oti_pseudo_tokens' / 'imagenet' / 'test' / oti_exp_name / f'ema_oti_pseudo_tokens.pt',
+        PROJECT_ROOT / 'data' / 'oti_pseudo_tokens' / 'imagenet' / 'test' / oti_exp_name / token_file,
         map_location=device)
 
     return clip_model, preprocess, training_path, concept_to_phrases, concepts_to_filter_out, names_list, oti_tokens
@@ -140,7 +219,9 @@ def train_one_epoch(train_loader: DataLoader, clip_model: CLIP, epoch: int, phi:
                     lambda_gpt: float, name_to_concepts: Dict[str, List[str]], concept_to_phrases: Dict[str, List[str]],
                     num_epochs: int, optimizer: optim.Optimizer, scaler: GradScaler, temperature: float,
                     top_k_concepts: int, training_log_frame: pd.DataFrame, training_path: Path,
-                    concepts_to_filter_out: Set[str], names_list: List[str], oti_pseudo_tokens: torch.Tensor) -> None:
+                    concepts_to_filter_out: Set[str], name_to_index: Dict[str, int], oti_pseudo_tokens: torch.Tensor,
+                    phrase_match: str = 'legacy', scheduler=None, degraded: Optional[DegradedFeatures] = None,
+                    aug_prob: float = 0.0, feature_noise: float = 0.0) -> pd.DataFrame:
     with experiment.train():
         phi.train()
 
@@ -153,8 +234,16 @@ def train_one_epoch(train_loader: DataLoader, clip_model: CLIP, epoch: int, phi:
 
         train_bar = tqdm(train_loader, ncols=150)
         for idx, batch in enumerate(train_bar):
-            images_features = batch['image'].to(device)
             names = batch['image_name']
+            if degraded is not None and aug_prob > 0:  # robust phi: some features come from degraded images
+                images_features = degraded.replace(batch['image'], names, aug_prob).to(device)
+            else:
+                images_features = batch['image'].to(device)
+            if feature_noise > 0:  # f + sigma * |f| * eps / sqrt(d) (plan 08, section 8.5)
+                noise = torch.randn_like(images_features)
+                norms = images_features.norm(dim=-1, keepdim=True)
+                images_features = images_features + feature_noise * norms * noise / math.sqrt(
+                    images_features.shape[-1])
 
             images_in_batch = images_features.size(0)
             step = len(train_bar) * (epoch - 1) + idx
@@ -172,14 +261,14 @@ def train_one_epoch(train_loader: DataLoader, clip_model: CLIP, epoch: int, phi:
                 # Compute the distillation loss
                 if lambda_distil > 0:
                     target_oti_tokens = torch.vstack(
-                        [oti_pseudo_tokens[names_list.index(ref)].unsqueeze(0) for ref in names])
+                        [oti_pseudo_tokens[name_to_index[ref]].unsqueeze(0) for ref in names])
                     distillation_loss = distillation_criterion(target_oti_tokens, estimated_tokens, temperature)
 
                 # Compute the regularization loss
                 if lambda_gpt > 0:
                     reg_gpt_phrases = [random.choice(concept_to_phrases[concept]) for concept in batch_concepts]  #
-                    token_gpt_phrases = [gpt_phrase.replace(w, " $ ") for w, gpt_phrase in
-                                         zip(batch_concepts, reg_gpt_phrases)]
+                    token_gpt_phrases = [replace_concept(gpt_phrase, w, phrase_match, first_only=False)
+                                         for w, gpt_phrase in zip(batch_concepts, reg_gpt_phrases)]
 
                     tokenized_reg_gpt_phrases = clip.tokenize(reg_gpt_phrases, truncate=True).to(device)
                     tokenized_tokens_gpt_phrases = clip.tokenize(token_gpt_phrases, truncate=True).to(device)
@@ -198,6 +287,8 @@ def train_one_epoch(train_loader: DataLoader, clip_model: CLIP, epoch: int, phi:
             scaler.scale(total_loss).backward()
             scaler.step(optimizer)
             scaler.update()
+            if scheduler is not None:
+                scheduler.step()
 
             # Update running results and tqdm bar
             experiment.log_metric('step_total_loss', total_loss.detach().cpu().item(), step=step)
@@ -220,19 +311,68 @@ def train_one_epoch(train_loader: DataLoader, clip_model: CLIP, epoch: int, phi:
         experiment.log_metric('epoch_gpt_loss', epoch_gpt_loss, epoch=epoch)
         experiment.log_metric('epoch_distillation_loss', epoch_distillation_loss, epoch=epoch)
 
-        # Training CSV logging
+        # Training CSV logging (the frame is returned: the original code dropped it and kept only the last epoch)
         training_log_frame = pd.concat(
             [training_log_frame,
              pd.DataFrame(data={'epoch': epoch, 'epoch_total_loss': epoch_total_loss,
                                 'epoch_gpt_loss': epoch_gpt_loss, 'epoch_distillation_loss': epoch_distillation_loss},
                           index=[0])])
         training_log_frame.to_csv(str(training_path / 'train_metrics.csv'), index=False)
+    return training_log_frame
+
+
+def lr_schedule(optimizer: optim.Optimizer, kind: str, warmup_epochs: int, num_epochs: int, steps_per_epoch: int):
+    """
+    None for a constant learning rate (original behaviour); 'cosine': linear warm-up then cosine decay to 0, per step
+    """
+    if kind == 'none':
+        if warmup_epochs:
+            print("WARNING: --warmup-epochs is ignored with --lr-scheduler none")
+        return None
+    total = num_epochs * steps_per_epoch
+    warmup = warmup_epochs * steps_per_epoch
+
+    def factor(step: int) -> float:
+        if step < warmup:
+            return (step + 1) / warmup
+        progress = (step - warmup) / max(1, total - warmup)
+        return 0.5 * (1 + math.cos(math.pi * min(progress, 1.0)))
+
+    return optim.lr_scheduler.LambdaLR(optimizer, factor)
+
+
+def training_features(args, train_dataset: ImageNetDataset, clip_model: CLIP) -> Tuple[torch.Tensor, List[str]]:
+    """
+    CLIP features of the training images, optionally cached in --features-cache-dir (shared by all the trainings
+    with the same backbone, preprocessing and image list)
+    """
+    if args.features_cache_dir is None:
+        features, names = extract_image_features(train_dataset, clip_model)
+        return features.cpu(), names
+    import hashlib
+    names = [p.name for p in train_dataset.images_path]
+    digest = hashlib.sha1('\n'.join(names).encode()).hexdigest()[:10]
+    path = Path(args.features_cache_dir) / \
+        f"imagenet-test-{args.clip_model_name.replace('/', '')}-{args.preprocess_type}-{len(names)}-{digest}.pt"
+    if path.exists():
+        cached = torch.load(path, map_location='cpu')
+        print(f"Training features loaded from {path}")
+        return cached['features'], cached['names']
+    features, names = extract_image_features(train_dataset, clip_model)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save({'features': features.cpu(), 'names': names}, path)
+    print(f"Training features saved to {path}")
+    return features.cpu(), names
 
 
 def train_phi(args):
     clip_model, preprocess, training_path, concept_to_phrases, concepts_to_filter_out, names_list, oti_tokens = \
         get_model_oti_tokens_preprocess(args, args.clip_model_name, args.exp_name, args.gpt_exp_name, args.oti_exp_name,
                                         args.preprocess_type)
+    # Row of the OTI token of each image (a dict instead of names_list.index, which scanned the whole list)
+    name_to_index = {}
+    for i, name in enumerate(names_list):
+        name_to_index.setdefault(name, i)
 
     # Define the phi model
     embedding_dim = clip_model.token_embedding.embedding_dim
@@ -242,10 +382,17 @@ def train_phi(args):
 
     # Define the train datasets
     train_dataset = ImageNetDataset(args.imagenet_dataset_path, 'test', preprocess)
+    if args.train_on_oti_names:  # train only on the images that have an OTI token (e.g. one or two shards)
+        n_images = len(train_dataset.images_path)
+        train_dataset.images_path = [p for p in train_dataset.images_path if p.name in name_to_index]
+        print(f"--train-on-oti-names: {len(train_dataset.images_path)}/{n_images} images have an OTI token")
 
     # Extract the image features of the ImageNet test set
-    training_image_features, training_image_names = extract_image_features(train_dataset, clip_model)
-    training_image_features = training_image_features.cpu()
+    training_image_features, training_image_names = training_features(args, train_dataset, clip_model)
+    missing = [n for n in training_image_names if n not in name_to_index]
+    if missing:
+        raise ValueError(f"{len(missing)} training images have no OTI token in {args.oti_exp_name} "
+                         f"(e.g. {missing[:3]}): use --train-on-oti-names")
 
     # Create a dataloader for the training set for directly yielding the features along with the image names
     tensor_classic_train_dataset = CustomTensorDataset(training_image_features, training_image_names)
@@ -268,18 +415,47 @@ def train_phi(args):
     # Define the optimizer, the loss and the grad scaler
     optimizer = optim.AdamW(phi.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     scaler = GradScaler()
+    scheduler = lr_schedule(optimizer, args.lr_scheduler, args.warmup_epochs, args.num_epochs,
+                            len(classic_train_loader))
+    degraded = DegradedFeatures(args.aug_feature_dir) if args.aug_feature_dir else None
+    if degraded is None and args.aug_prob > 0:
+        raise ValueError("--aug-prob needs --aug-feature-dir")
 
     # Define dataframes for CSV logging
     training_log_frame = pd.DataFrame()
     validation_log_frame = pd.DataFrame()
 
+    # Continue an interrupted training
+    start_epoch = 1
+    resume_path = training_path / "checkpoints" / "resume.pt"
+    if args.resume:
+        if resume_path.exists():
+            state = load_resume_state(resume_path)
+            phi.load_state_dict(state[phi.__class__.__name__])
+            optimizer.load_state_dict(state['optimizer'])
+            scaler.load_state_dict(state['scaler'])
+            if scheduler is not None and state['scheduler'] is not None:
+                scheduler.load_state_dict(state['scheduler'])
+            torch.set_rng_state(state['rng']['torch'])
+            random.setstate(state['rng']['random'])
+            np.random.set_state(state['rng']['numpy'])
+            if state['rng']['cuda'] is not None and torch.cuda.is_available():
+                torch.cuda.set_rng_state_all(state['rng']['cuda'])
+            training_log_frame = pd.DataFrame(state['training_log'])
+            validation_log_frame = pd.DataFrame(state['validation_log'])
+            start_epoch = state['epoch'] + 1
+            print(f"Resuming from {resume_path} at epoch {start_epoch}")
+        else:
+            print(f"WARNING: --resume given but {resume_path} does not exist: starting from epoch 1")
+
     # Start with the training loop
     print('Training loop started')
-    for epoch in range(1, args.num_epochs + 1):
-        train_one_epoch(classic_train_loader, clip_model, epoch, phi, args.lambda_distil, args.lambda_gpt,
-                        name_to_concepts, concept_to_phrases, args.num_epochs, optimizer,
-                        scaler, args.temperature, args.top_k_concepts, training_log_frame, training_path,
-                        concepts_to_filter_out, names_list, oti_tokens)
+    for epoch in range(start_epoch, args.num_epochs + 1):
+        training_log_frame = train_one_epoch(
+            classic_train_loader, clip_model, epoch, phi, args.lambda_distil, args.lambda_gpt, name_to_concepts,
+            concept_to_phrases, args.num_epochs, optimizer, scaler, args.temperature, args.top_k_concepts,
+            training_log_frame, training_path, concepts_to_filter_out, name_to_index, oti_tokens,
+            args.phrase_match, scheduler, degraded, args.aug_prob, args.feature_noise)
 
         # Validation
         if epoch % args.validation_frequency == 0:
@@ -313,6 +489,9 @@ def train_phi(args):
             if epoch > 0 and epoch % args.save_frequency == 0:
                 save_phi(f'phi_{epoch}', epoch, phi, training_path)
             save_phi(f'phi_last', epoch, phi, training_path)
+            if epoch % args.save_frequency == 0 or epoch == args.num_epochs:
+                save_resume_state(training_path, epoch, phi, optimizer, scaler, scheduler, training_log_frame,
+                                  validation_log_frame)
 
 
 def parse_args():
@@ -349,13 +528,41 @@ def parse_args():
     parser.add_argument("--workspace", type=str, help="Workspace of Comet logging")
     parser.add_argument("--seed", type=int, default=42, help="seed for reproducibility")
 
+    # Plan 08 / 03 / 06 additions (defaults keep the original behaviour)
+    parser.add_argument("--train-on-oti-names", action='store_true',
+                        help="Train only on the ImageNet images that have a token in --oti-exp-name")
+    parser.add_argument("--resume", action='store_true',
+                        help="Continue from checkpoints/resume.pt (written every --save-frequency epochs with "
+                             "--save-training)")
+    parser.add_argument("--features-cache-dir", type=str, default=None,
+                        help="Cache of the CLIP features of the training images (skipping the extraction changes "
+                             "the random stream, so a cached run is not bit-identical to an uncached one)")
+    parser.add_argument("--aug-feature-dir", type=str, default=None,
+                        help="Features of degraded training images (tools/precompute_degraded_features.py)")
+    parser.add_argument("--aug-prob", type=float, default=0.0,
+                        help="Probability of replacing a clean feature by a degraded one")
+    parser.add_argument("--feature-noise", type=float, default=0.0,
+                        help="sigma of the Gaussian noise added to the input features, relative to their norm")
+    parser.add_argument("--lr-scheduler", type=str, default='none', choices=['none', 'cosine'],
+                        help="Learning rate schedule (per step)")
+    parser.add_argument("--warmup-epochs", type=int, default=0, help="Linear warm-up epochs of the cosine schedule")
+    parser.add_argument("--oti-token-type", type=str, default='ema', choices=['ema', 'raw'],
+                        help="Distillation targets: EMA tokens (original) or raw OTI tokens")
+    parser.add_argument("--phrase-match", type=str, default='legacy', choices=PHRASE_MATCH,
+                        help="How the concept is replaced by $ in the GPT phrases (gpt_phrases_utils.py)")
+    parser.add_argument("--concept-filter", type=str, default='legacy', choices=CONCEPT_FILTER,
+                        help="Drop whole concepts (legacy) or only the unusable phrases (per-phrase)")
+
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
 
-    if args.api_key and args.workspace:
+    if Experiment is None:
+        print("comet_ml is not installed: Comet logging DISABLED")
+        experiment = NoExperiment()
+    elif args.api_key and args.workspace:
         print("Comet logging ENABLED")
         experiment = Experiment(
             api_key=args.api_key,

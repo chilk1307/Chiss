@@ -1,6 +1,6 @@
 # Tiến độ dự án
 
-**Cập nhật:** 17/10/2026 tối (Ngày 1): Chí làm xong phần code của Ngày 1–3 (C2–C8).
+**Cập nhật:** 18/10/2026 (Ngày 2): Chí làm xong C9, C11, C12, C13, C15 (Ngày 4–8); C10, C14, C21, C22 làm một phần; C16 chưa làm. Code từ 18/10 chưa commit, chưa push.
 **Cách dùng:** làm xong việc nào thì đổi `- [ ]` thành `- [x]`, ghi ngày xong ở cuối dòng, rồi cập nhật bảng tóm tắt bên dưới. Việc làm được một phần thì giữ `- [ ]` và ghi "(một phần: …)".
 
 ## Tóm tắt
@@ -8,10 +8,10 @@
 | Phần | Xong | Tổng | Tiến độ | Ghi chú |
 |---|---|---|---|---|
 | **Giai đoạn 0: tái lập SEARLE** (trước kế hoạch) | 13 | 15 | **87%** | Còn thiếu: điểm test từ server; FashionIQ chỉ có tập con |
-| Kế hoạch 2 tuần: Chí (C1–C23) | 5 | 23 | 22% | C3, C5–C8 xong; C2, C4 code xong, chờ nghiệm thu trên Colab; C1 cần làm tay |
+| Kế hoạch 2 tuần: Chí (C1–C23) | 10 | 23 | 43% | C3, C5–C9, C11–C13, C15 xong; C2, C4 chờ nghiệm thu trên Colab; C10, C14, C21, C22 một phần; C1 cần làm tay |
 | Kế hoạch 2 tuần: Hòa (H1–H18, T1–T2) | 1 | 20 | 5% | H3 xong (file subset CIRR đã có) |
 | Kế hoạch 2 tuần: Doanh (D1–D17) | 0 | 17 | 0% | |
-| **Kế hoạch 2 tuần: cả nhóm** | 6 | 60 | **10%** | Code của Chí đi trước lịch 2 ngày |
+| **Kế hoạch 2 tuần: cả nhóm** | 11 | 60 | **18%** | Code của Chí đi trước lịch khoảng 5 ngày |
 | Mốc kiểm tra M1–M5 | 0 | 5 | 0% | M1 hạn 18/10 |
 
 Trang tự đánh giá của demo (`/api/assessment`, chỉ tính phần tái lập): lõi **93%**, tính cả phần mở rộng (SEARLE-XL, SEARLE-OTI) **75%**.
@@ -51,20 +51,20 @@ Chi tiết: [nhiem_vu_Chi.md](nhiem_vu_Chi.md).
 - [x] **C6** (Ngày 3) Cờ tiền xử lý `--targetpad-ratio`, `--interp`, `--tta` (cache phân biệt theo cấu hình) — 17/10
 - [x] **C7** (Ngày 3) `check_datasets.py`, `bootstrap_ci.py`, `collect_results.py`; đối chiếu số "Paper" (khớp arXiv v2) — 17/10
 - [x] **C8** (Ngày 3) CBIR cổ điển (histogram màu, LBP, HOG, Gabor), `--cbir-features`, `--cbir-text-weight` — 17/10
-- [ ] **C9** (Ngày 4) Suy giảm, phục hồi, lọc tần số; `--save-quality`
-- [ ] **C10** (Ngày 5) Code train: tra token bằng dict, train tập con, `--resume`, ảnh xấu, nhiễu đặc trưng, lịch LR, loại token
-- [ ] **C11** (Ngày 5) Bộ tách ràng buộc, phân loại truy vấn, phân tích giữ – sửa; chấm tay 100 câu
-- [ ] **C12** (Ngày 6) Bộ đo thuộc tính; kiểm thử trên ảnh tổng hợp (E2.1); `attribute_stats.py`
-- [ ] **C13** (Ngày 7) Xếp hạng lại theo thuộc tính; họp mốc M3
-- [ ] **C14** (Ngày 8) Ước lượng suy giảm; `--restore auto`, `auto_iqa`, `oracle`; `--degrade mixed`
-- [ ] **C15** (Ngày 8) Kết hợp điểm ảnh + văn bản; ensemble prompt
+- [x] **C9** (Ngày 4) Suy giảm, phục hồi, lọc tần số; `--save-quality` (thử trên ảnh thật: phục hồi đúng loại đều tăng PSNR/SSIM) — 18/10
+- [ ] **C10** (Ngày 5) Code train: tra token bằng dict, train tập con, `--resume`, ảnh xấu, nhiễu đặc trưng, lịch LR, loại token (một phần: đã viết đủ cờ, `tools/merge_oti.py`, `tools/precompute_degraded_features.py`; kiểm thử so với code cũ chưa đạt: epoch 1 khớp, epoch 2–3 lệch nhẹ; chưa thử `--resume`, `--aug-feature-dir`)
+- [x] **C11** (Ngày 5) Bộ tách ràng buộc, phân loại truy vấn, phân tích giữ – sửa; chấm tay 100 câu (parser đúng 97%, phân loại đúng 78%; phiếu chấm ở `tools/grading/`) — 18/10
+- [x] **C12** (Ngày 6) Bộ đo thuộc tính; kiểm thử trên ảnh tổng hợp (E2.1 đã chạy: màu 100%, sọc 19/20, mặt nạ Otsu/GrabCut IoU 1,00); `attribute_stats.py` — 18/10
+- [x] **C13** (Ngày 7) Xếp hạng lại theo thuộc tính (code xong, thử trên dữ liệu giả lập; họp mốc M3 theo lịch 23/10, theo dõi ở mục Mốc) — 18/10
+- [ ] **C14** (Ngày 8) Ước lượng suy giảm; `--restore auto`, `auto_iqa`, `oracle`; `--degrade mixed` (một phần: `oracle`, `--degrade mixed` chạy được; `degradation_estimation.py` đã viết nhưng thiếu file ngưỡng `restore_rules.json` và công cụ hiệu chỉnh, nên `auto` chưa chạy; `auto_iqa` cần thêm `piq` vào `requirements-xla.txt`)
+- [x] **C15** (Ngày 8) Kết hợp điểm ảnh + văn bản; ensemble prompt (sửa lỗi mẫu `"$,"` làm mất token `$`) — 18/10
 - [ ] **C16** (Ngày 9) Công cụ hình ảnh: ví dụ, bản đồ che khuất, hình suy giảm, PSNR so với điểm truy xuất
 - [ ] **C17** (Ngày 10–11) Demo: tab thuộc tính, tab ảnh xấu → phục hồi, so sánh phương pháp, nút "Vì sao?"
 - [ ] **C18** (Ngày 11) Chọn cấu hình cuối, gửi lệnh nộp test
 - [ ] **C19** (Ngày 12–13) README gốc repo, `CHANGES.md`, báo cáo, slide
 - [ ] **C20** (Ngày 14) Video demo, kiểm tra trước khi nộp, nộp bài
-- [ ] **C21** (Ngày 9) Code OTI warm-start (`--init`, `--snapshot-steps`, `--token-file`)
-- [ ] **C22** (Ngày 9) Công cụ bộ câu GPT: thống kê, làm sạch (P1), `--phrase-match`, `--concept-filter`, sửa lỗi `saved_exp_name`
+- [ ] **C21** (Ngày 9) Code OTI warm-start (`--init`, `--snapshot-steps`, `--token-file`) (một phần: `--token-file`, `--interp-phi`, `--interp-lambda` đã có ở phía đánh giá; `oti_inversion.py` chưa sửa)
+- [ ] **C22** (Ngày 9) Công cụ bộ câu GPT: thống kê, làm sạch (P1), `--phrase-match`, `--concept-filter`, sửa lỗi `saved_exp_name` (một phần: `src/gpt_phrases_utils.py` và hai cờ cho `train_phi.py`; còn phía OTI, `phrases_stats.py`, `clean_phrases.py`, lỗi `saved_exp_name`)
 - [ ] **C23** (Ngày 11) Notebook sinh câu `colab/gen_phrases.ipynb`, chế độ quy mô nhỏ
 
 ## Kế hoạch 2 tuần: Hòa (Colab)
@@ -124,7 +124,8 @@ Chi tiết: [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md).
 
 ## Việc tiếp theo
 
-1. Chí: đẩy code lên GitHub (Hòa, Doanh clone từ đó); làm tay phần còn lại của C1; chạy notebook một lần trên Colab để nghiệm thu C2.
-2. Hòa: H1, H2 ngay khi code lên GitHub. Ô "Kiểm tra dữ liệu (E1.2)" của notebook đã dùng được `tools/check_datasets.py`, thay cho đoạn Python chép tay ở H2.
-3. Doanh: D1 ngay khi code lên GitHub.
-4. Vì C4–C8 đã xong, H5 (Ngày 3), H6 (Ngày 4), H7 (Ngày 5), D3, D4 có thể chạy sớm hơn lịch nếu còn GPU. Chí chuyển sang C9 (Ngày 4).
+1. Chí: sửa lệch của C10 trước tiên (Doanh cần code train từ Ngày 5–6); tạo `restore_rules.json` và công cụ hiệu chỉnh cho C14; làm C21, C16, phần còn lại của C22; cập nhật `CHANGES.md` và bảng giao kèo ở [01](01_nen_tang_danh_gia.md); rồi commit và push. Không push trước khi C10 qua kiểm thử.
+2. Chí: làm tay phần còn lại của C1; chạy notebook một lần trên Colab để nghiệm thu C2.
+3. Hòa: H1, H2 ngay khi code lên GitHub. Ô "Kiểm tra dữ liệu (E1.2)" của notebook đã dùng được `tools/check_datasets.py`, thay cho đoạn Python chép tay ở H2.
+4. Doanh: D1 ngay khi code lên GitHub.
+5. Số sơ bộ cho mốc M3 (đo trên file chú thích công khai, chưa phải E2.0 chính thức của Hòa): truy vấn có thuộc tính đo được chiếm FashionIQ 90,7%, CIRR 36,3%, CIRCO 25,5%, vượt ngưỡng 10%.

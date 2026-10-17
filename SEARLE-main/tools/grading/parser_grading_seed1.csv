@@ -1,0 +1,101 @@
+n,dataset,qid,caption,parsed_constraints,categories,constraints_ok (y/n),missed_or_wrong_constraints,categories_ok (y/n),notes
+1,cirr,14515,Replace the panda with a group of dogs and replace the walls with wooden fences.,,"pattern, count, addition",y,,n,replacement counted as addition
+2,cirr,13326,"Change to a close-up of only a single dog, must have chocolate-brown coloured fur, only grass in background",closer view; brown,"color, pattern, count, background, viewpoint",y,,y,
+3,cirr,28889,Focus on one black baby dog with softies excluding man behind the scene,black,"color, count, spatial, negation, viewpoint",y,,y,
+4,cirr,14287,Show man with red hair cutting cape.,red,color,y,,y,
+5,cirr,38333,It is a smaller couch with  the addition of pillows.,,,y,,n,"missed addition (""the addition of pillows"")"
+6,cirr,37344,Make with one pizza with egg omlette on toppings rather showing dough on bowl,,count,y,,y,
+7,cirr,37714,Different sizes and sapes of water bottle rather making with safety pins,,background,y,,n,"background from ""water bottle""; missed count"
+8,cirr,35086,A grey train parking on the trail and shot by another angle.,gray,"color, viewpoint",y,,y,
+9,cirr,27943,Shows another working area that is all white items and has built in shelves and cabinets and a foldable desk area.,white,"color, addition, background",y,,y,
+10,cirr,13900,the target pic shows some ostriches,,addition,y,,y,
+11,cirr,38115,A puppy dog laying down on a man's arms.,,,y,,y,
+12,cirr,12621,Two people stand in front the dogs in the snow.,,"count, spatial, background",y,,y,
+13,cirr,35611,Zoom in on the dog's face and another dog's ears appear.,closer view,viewpoint,y,,y,
+14,cirr,37037,A small hamster sitting in a human hand and facing the camera.,,viewpoint,y,,y,
+15,cirr,12115,put the human in background,,background,y,,y,
+16,cirr,37272,Remove the dogs and add multiple hamsters sleeping inside of a green container on pellets.,green,"color, count, negation, addition, background",y,,y,
+17,cirr,29040,Shows another dog of the same breed and color chewing on a toy while laying on a hardwood floor.,,"color, addition, background",y,,n,replacement counted as addition
+18,cirr,28426,Shows two younger people wearing different possible swimwear that consists of a solid colored tank top and matching panty bottom.,solid,"color, pattern, count, spatial, addition",y,,n,"spatial from ""panty bottom"""
+19,cirr,14043,Table has sunglasses.,,background,y,,n,"background from ""table""; missed addition"
+20,cirr,29720,Show the snowy mountains in the back.,,background,y,,y,
+21,cirr,12672,Add a second lemon slice,,addition,y,,n,"missed count (""a second"")"
+22,cirr,12497,Paint the cup blue with cut outs.,blue,color,y,,y,
+23,cirr,12562,Add two children and cattle,,"count, addition",y,,y,
+24,cirr,12234,Outer patio with mosaic in the middle of the ground and church in the back,,spatial,y,,n,"missed background (patio, church)"
+25,cirr,35174,The toy of a train inside a store.,,background,y,,n,"missed style (""toy of a train""); background from ""inside"""
+26,cirr,28141,Make close coverage of dog biting leaf in mouth excluding mans hand from picture,,negation,n,"missed zoom:closer (""close coverage"")",n,missed viewpoint
+27,cirr,36839,Turn the couple into pelicans and make them kiss,,count,y,,y,
+28,cirr,12635,Put the lemon and zest on a white plate.,white,color,y,,y,
+29,cirr,28252,"Different animal, face is zoomed in and no background",closer view,"negation, background, viewpoint",y,,y,
+30,cirr,37129,Make the girl pose head-on,,,y,,y,
+31,cirr,38336,"remove bed feature, make the couch made only of brown cushions, add brick tile flooring to baground, make wall white.",brown; white,"color, negation, addition, background",y,,y,
+32,cirr,28498,Dog lies down on the black couch.,black,color,y,,y,
+33,cirr,33385,animal further away and laying on side,farther view,viewpoint,y,,y,
+34,cirr,28468,Shows two other girls wearing different sets of long sleeved pajamas with unicorns on them.,,"count, addition",y,,y,
+35,cirr,28177,Put a black background behind the small animal.,black (whole image),"color, spatial, addition, background",y,,y,
+36,cirr,37513,Two dogs have changed to one goat.,,count,y,,y,
+37,cirr,29335,Target on running train with red bridges instead of servicing train,red,color,y,,y,
+38,cirr,12476,"Change to a stationary cart and horse facing the opposite direction, must include farmers tending to them",,"spatial, addition",y,,y,
+39,cirr,36757,Closer shot and number of dogs decreased to one with the addition of a blue thing in its mouth.,closer view; blue,"color, count, viewpoint",y,,n,missed addition
+40,cirr,13998,"The target photo is a multilayer pizza in the shaped of a layered cake with one piece taken out, sitting on a white plate.",white,"color, count, negation",y,,y,
+41,cirr,27412,Make the flowers inside vase rather raping it with towel in bathroom space,,background,y,,y,
+42,cirr,29443,Show the blue color blocks on the bag.,blue,color,y,,y,
+43,cirr,14342,The target photo is a closeup of a brown and white dog swimming to the right in clean water.,closer view; brown; white,"color, spatial, background, viewpoint",y,,y,
+44,cirr,29923,Birds perched on metal in the cage.,,pattern,y,,y,
+45,cirr,38482,a doberman stretching with its front feet resting on a tree stump in a forest,,background,y,,y,
+46,cirr,38678,Target on one ceramic bottle with silver cap rather showing with black cap,gray; black,"color, count",n,"black should be negated (""rather showing with black cap"")",y,
+47,cirr,27504,Make monkey to face across camera surrounded by more leaves in inkwell effect,,"count, background",y,,y,
+48,cirr,29542,Make with group of dogs sleeping in baggage rather showing big one,,count,y,,y,
+49,cirr,29265,Show the underside of a crab.,,,y,,n,"missed viewpoint (""underside"")"
+50,cirr,38446,Four animals rests in the dirt.,,count,y,,y,
+51,fiq,toptee:B009LLBI3C->B002EB464E,is green colored and has shorter sleeves || is less trendy and more junior,green,color,y,,y,
+52,fiq,shirt:B004G09IXK->B00BQ9SS8U,has no sleeves with a blue and white color || is a light blue tank,blue; white,"color, negation, addition",y,,n,"addition from ""with a blue"""
+53,fiq,toptee:B0086JXCEI->B0086JXBYE,Has a less colorful graphic || has a different pattern,less colorful; patterned,"brightness, pattern",y,,y,
+54,fiq,dress:B00C6PP5CA->B00AHOY8H0,is shorter and has a little design || dark and short,,"pattern, addition",n,"missed pattern (""little design"") and brightness (""dark"")",n,"addition from ""has a little design"""
+55,fiq,shirt:B00BFCV6A0->B003CMQITA,is black with white words || is black with a white logo.,black; white,"color, pattern, addition",y,,n,"addition from ""with a white logo"""
+56,fiq,dress:B004OHYU4M->B00AIHGCMU,is red with rhinestones || is red and flouncy,red,color,y,,y,
+57,fiq,shirt:B003WF2ECW->B003YHF2BS,has a darker blue color || is just a polo,darker; blue,"color, brightness",y,,y,
+58,fiq,shirt:B007HRO9B0->B006Y8Q79U,is more darker with striped lines || has longer sleeves and is a dark grey,darker; striped; gray,"color, brightness, pattern",y,,y,
+59,fiq,toptee:B009BOJQP6->B0052UX13G,The shirt is red with the England emblem. || Is reddish and looser,red,color,y,,y,
+60,fiq,dress:B00466F2W0->B0098BW31Q,is solid black with ruffles || is darker colored with no sequins,solid; black; darker,"color, brightness, pattern, negation",y,,y,
+61,fiq,shirt:B0038N83ZK->B009QR94S2,is black colored with a smaller image || has a galaxy graphic,black; patterned,"color, pattern, addition",y,,n,"addition from ""has a galaxy graphic"""
+62,fiq,toptee:B0045DTP72->B008FJZ7LK,is light blue and shorter sleeves || womens fit rounded neck light blue with graphic,blue; patterned,"color, pattern",y,,y,
+63,fiq,toptee:B00C5NMEPE->B003MWXXCK,is a male t shirt || Has a graphic,patterned,"pattern, addition",y,,n,"addition from ""Has a graphic"""
+64,fiq,toptee:B00B96CBQA->B007ISRV9U,is white with black designs || has a complex pattern design,white; black; patterned,"color, pattern, addition",y,,n,"addition from ""has a complex pattern"""
+65,fiq,shirt:B00B71EDRC->B00BRGFCJK,is a t-shirt that is black || has short sleeves and is all black,black,color,y,,y,
+66,fiq,dress:B00AQUZKG8->B00DHVW5N4,short sleeves orange floral long blouse || is more orange and is a blouse,orange; floral,"color, pattern",y,,y,
+67,fiq,shirt:B002UQJENQ->B00CPSD8A4,is dark colored || is darker,darker,"color, brightness",y,,y,
+68,fiq,toptee:B00CIHR6BE->B004GB1ZEY,has long sleeves and is plain || Has longer sleeves and no print,solid,"pattern, negation",y,,y,
+69,fiq,toptee:B00C67YB50->B0079G1DI6,is yellow and has shorter sleeves || is brighter in color,yellow; brighter,"color, brightness",y,,y,
+70,fiq,dress:B007WA2VB2->B008596SUO,Is more striped and more short || is shorter,striped,pattern,y,,y,
+71,fiq,dress:B004E9SNTS->B00FHLNHK2,has longer sleeves and a belt || is shorter,,,y,,y,
+72,fiq,toptee:B00ECRIKTA->B00D7112VA,is plain black and more fitted || is solid black,solid; black,"color, pattern",y,,y,
+73,fiq,shirt:B007XCSP9G->B00962JHKC, button down with collar || has a larger graphic,patterned,pattern,y,,y,
+74,fiq,shirt:B000EGBBTE->B001JTDJZY,The shirt is black with Superman. || A bright yellow shirt w/white letters,black; yellow; white,color,y,,y,
+75,fiq,shirt:B00CH1JZ92->B006U6ENVK,its black with red print || is black with red logo,black; red; patterned,"color, pattern",y,,y,
+76,fiq,toptee:B008RLTLF4->B008SBXUNW,The shirt dress in short and white and black in color. || is black and white with shorter sleeves,white; black; black and white,"color, brightness",y,,y,
+77,fiq,dress:B007MLM38C->B00711V8Y8,is lighter with no stripes and lots of pleats || is ivory with a layered top,brighter; not striped; white,"color, brightness, pattern, count, spatial, negation, addition",y,,n,count/spatial/addition from clothing words
+78,fiq,shirt:B008YCX6KC->B00BJJJ6YM,is white without a collar or buttons with shorter sleeves || is white and a t-shirt,white,"color, negation",y,,y,
+79,fiq,dress:B007SX36PI->B00AKCGNP4,is not as shiny || is pink and has longer sleeves,pink,"color, pattern, negation",y,,y,
+80,fiq,shirt:B0099694TE->B00580DVJO,has shorter sleeves and lighter in color || is white with red image,brighter; white; red,"color, brightness",y,,y,
+81,fiq,toptee:B00DS0TDAW->B0018ZUW40,is black with skull designs || sleeves,black; patterned,"color, pattern",y,,y,
+82,fiq,toptee:B007RBI9P8->B007RBU2DU,is black colored and more revealing || is a black tank,black,color,y,,y,
+83,fiq,toptee:B0009MGZQ2->B002BJL5XO,has buttons and is brighter colored || is green and white buttons,brighter; green; white,"color, brightness",y,,y,
+84,fiq,toptee:B001OOLPBY->B00CBS8D4Y,has a darker color and a print || is darker in color,darker; patterned,"color, brightness, pattern",y,,y,
+85,fiq,shirt:B009ZZ7PYU->B00BQK0P7Q,is gray with different wording || is grey,gray,color,y,,y,
+86,fiq,toptee:B00ECWR21C->B008X04NWA,has a longer sleeve shirt || is black and much longer,black,color,y,,y,
+87,fiq,dress:B003XCNN3I->B004HSN6W0,Is darker with longer length. || is darker in color and longer,darker,"color, brightness",y,,y,
+88,fiq,dress:B008FPXR3Y->B00AESNPGY,has sleeves || has different coloring and fuller shoulders.,,,y,,n,"missed color (""different coloring"")"
+89,fiq,toptee:B009K2N8GW->B0079K3RI6,is a fitted blue t shirt ||  is lighter colored,blue; brighter,"color, brightness",y,,y,
+90,fiq,dress:B009HK2P2A->B00BXZ1PW8,purple with no sleeves || is a dress,purple,"color, negation",y,,y,
+91,fiq,dress:B008RMIF5A->B006R3CSGS, and handkerchief hemline || is more blue and longer,blue,color,y,,y,
+92,fiq,dress:B00508YRGU->B004PKZWNG,lighter color and print || has buttons,brighter; patterned,"color, brightness, pattern",y,,y,
+93,fiq,toptee:B00BNMTGEA->B00CO951MW,strapless pink tube top || is more revealing and shorter,pink,"color, spatial",y,,n,"spatial from ""tube top"""
+94,fiq,toptee:B0072C7GV0->B00B9ZF3H0,The shirt is short sleeves and light in color. || short sleeves lighter color waterfall effect,brighter,"color, brightness",y,,y,
+95,fiq,dress:B00CDJZYA2->B008L0GPLY,has a u shaped neck with short sleeves || has a different coloring in darker colors.,darker,"color, brightness, addition",y,,n,"addition from ""has a u shaped neck"""
+96,fiq,shirt:B003U6HHS4->B007ISC8UM,has grey sleeves and no buttons || is blue and grey with shorter sleeves,gray; blue,"color, negation",y,,y,
+97,fiq,toptee:B00BQLAARU->B002GJ9UHM,Is more casual and fitted || is a green form-fitting T-shirt,green,color,y,,y,
+98,fiq,shirt:B007T4JJCK->B004M8RY82,has shorter sleeves and larger print || has shorter sleeves and is blue and white,patterned; blue; white,"color, pattern",y,,y,
+99,fiq,toptee:B00A8YYL1C->B007HY3GWG,is lighter || has more grey and longer sleeves,brighter; gray,"color, brightness",y,,y,
+100,fiq,shirt:B0038R5UDE->B00325MG16,Has longer sleeves and is more plain || Is white with longer sleeves.,solid; white,"color, pattern",y,,y,

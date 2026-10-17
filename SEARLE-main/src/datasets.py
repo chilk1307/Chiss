@@ -47,21 +47,30 @@ def open_image(path: Union[Path, str], attempts: int = 3) -> PIL.Image.Image:
 class ImageListDataset(Dataset):
     """
     Dataset over an explicit list of images, used e.g. to encode the unique reference images of a split.
-    Yields a dict with keys ['image', 'image_name'].
+    Yields a dict with keys ['image', 'image_name'], plus the information returned by `transform` if given.
+    `transform(image, name) -> (image, info)` runs before `preprocess` (e.g. degradation / restoration of the
+    reference images, see reference_processing.py).
     """
 
-    def __init__(self, names: List[str], paths: List[Union[Path, str]], preprocess: callable, split: str = ''):
+    def __init__(self, names: List[str], paths: List[Union[Path, str]], preprocess: callable, split: str = '',
+                 transform: Optional[callable] = None):
         assert len(names) == len(paths)
         self.names = names
         self.paths = paths
         self.preprocess = preprocess
         self.split = split
+        self.transform = transform
 
     def __getitem__(self, index) -> Optional[dict]:
         try:
+            image = open_image(self.paths[index])
+            info = {}
+            if self.transform is not None:
+                image, info = self.transform(image, self.names[index])
             return {
-                'image': self.preprocess(open_image(self.paths[index])),
-                'image_name': self.names[index]
+                'image': self.preprocess(image),
+                'image_name': self.names[index],
+                **info
             }
         except Exception as e:
             warn_load_error(str(self.paths[index]), e)

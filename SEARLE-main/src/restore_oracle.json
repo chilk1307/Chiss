@@ -1,0 +1,14 @@
+{
+  "note": "Best restoration per degradation for --restore oracle. Provisional values (expected best method); replace them with the best method of each row of experiment E3.2 (Doanh, D8). Keys '<type>' or '<type>:<level>'; 'none' = no restoration.",
+  "source": "provisional, before E3.2",
+  "methods": {
+    "gauss_noise": "nlm",
+    "salt_pepper": "median",
+    "gauss_blur": "wiener",
+    "motion_blur": "wiener",
+    "jpeg": "deblock",
+    "low_light": "clahe",
+    "low_res": "unsharp",
+    "color_cast": "gray_world"
+  }
+}

@@ -33,6 +33,8 @@ from data_utils import PROJECT_ROOT, collate_fn, build_preprocess, preprocess_ke
 from datasets import CIRRDataset, CIRCODataset, FashionIQDataset, ImageListDataset
 from encode_with_pseudo_tokens import encode_with_pseudo_tokens
 from phi import Phi
+from prompts import PROMPT_SETS, PSEUDO_TOKEN_ID
+from reference_processing import ReferenceProcessor
 from utils import device
 
 TOKEN_EVAL_TYPES = ['oti', 'phi', 'searle', 'searle-xl']
@@ -90,6 +92,39 @@ def add_eval_args(parser, datasets: List[str]) -> None:
                         help="Weight of the CLIP caption score added to the CBIR score")
     parser.add_argument("--num-workers", type=int, default=10, help="DataLoader workers")
 
+    # Processing of the reference images only (plan 03)
+    parser.add_argument("--degrade", type=str, default='none', help="'none', '<type>:<level>' or 'mixed'")
+    parser.add_argument("--restore", type=str, default='none',
+                        help="'none', a restoration method, 'oracle', 'auto' or 'auto_iqa'")
+    parser.add_argument("--freq-filter", type=str, default='none', help="'none', 'lowpass:<r>' or 'highpass:<r>'")
+    parser.add_argument("--save-quality", action='store_true',
+                        help="Store the PSNR and SSIM of the processed reference images")
+
+    # Query side (plan 04)
+    parser.add_argument("--fusion-weight", type=float, default=0.0,
+                        help="alpha in score = cos(query, g) + alpha * cos(reference image, g)")
+    parser.add_argument("--prompt-set", type=str, default='default', choices=list(PROMPT_SETS),
+                        help="Query templates; 'ensemble' averages several templates")
+
+    # Attribute re-ranking (plan 02)
+    parser.add_argument("--attr-rerank", action='store_true', help="Re-rank the top-K with attribute meters")
+    parser.add_argument("--attr-weight", type=float, default=0.1, help="w in score = z(CLIP score) + w * mean(c)")
+    parser.add_argument("--attr-topk", type=int, default=100, help="Number of candidates re-ranked")
+    parser.add_argument("--attr-mask", type=str, default='auto', choices=['none', 'otsu', 'grabcut', 'saliency', 'auto'],
+                        help="How the object is separated from the background before measuring")
+    parser.add_argument("--attr-families", type=str, default='color,brightness,colorfulness,pattern,zoom',
+                        help="Comma separated attribute families used for re-ranking")
+    parser.add_argument("--attr-negation", type=str, default='on', choices=['on', 'off'],
+                        help="Handle negations ('not red', 'no stripes')")
+
+    # OTI tokens (plan 07)
+    parser.add_argument("--token-file", type=str, default='ema_oti_pseudo_tokens.pt',
+                        help="OTI token file of the experiment, e.g. oti_pseudo_tokens_step50.pt")
+    parser.add_argument("--interp-phi", type=str, default=None,
+                        help="'<phi exp>:<checkpoint>': interpolate the OTI tokens with the tokens of this phi")
+    parser.add_argument("--interp-lambda", type=float, default=None,
+                        help="token = (1 - lambda) * phi token + lambda * OTI token")
+
 
 def check_args(args) -> None:
     if args.eval_type in ['phi', 'oti'] and args.exp_name is None:
@@ -99,12 +134,33 @@ def check_args(args) -> None:
     if args.eval_type == 'cbir':
         from cbir import parse_cbir_features
         parse_cbir_features(args.cbir_features)
+        if args.fusion_weight != 0:
+            raise ValueError("--fusion-weight is not defined for --eval-type cbir (use --cbir-text-weight)")
     elif args.cbir_text_weight != 0:
         raise ValueError("--cbir-text-weight is only used with --eval-type cbir")
+    processor = ReferenceProcessor.from_args(args)  # also validates --degrade, --restore, --freq-filter
+    if processor is not None and args.eval_type == 'oti':
+        raise ValueError("--eval-type oti uses tokens precomputed on the clean images: --degrade, --restore, "
+                         "--freq-filter and --save-quality cannot change them")
+    if processor is not None and args.eval_type == 'text':
+        print("WARNING: --eval-type text does not use the reference image, the reference processing has no effect")
+    if args.prompt_set != 'default' and args.eval_type not in TOKEN_EVAL_TYPES:
+        print("WARNING: --prompt-set only changes the pseudo-token methods")
+    if (args.interp_phi is None) != (args.interp_lambda is None):
+        raise ValueError("--interp-phi and --interp-lambda go together")
+    if args.interp_phi is not None and args.eval_type != 'oti':
+        raise ValueError("--interp-phi / --interp-lambda interpolate OTI tokens: use --eval-type oti")
+    if args.token_file != 'ema_oti_pseudo_tokens.pt' and args.eval_type != 'oti':
+        raise ValueError("--token-file is only used with --eval-type oti")
+    if args.attr_rerank:
+        from attributes.parser import parse_families
+        parse_families(args.attr_families)
+        if args.attr_topk < 2:
+            raise ValueError("--attr-topk should be at least 2")
 
 
 def nondefault_args(parser, args) -> dict:
-    ignore = {'dataset_path', 'output_dir', 'cache_dir', 'note', 'num_workers'}
+    ignore = {'dataset_path', 'output_dir', 'cache_dir', 'note', 'num_workers', 'save_quality'}
     return {k: v for k, v in vars(args).items() if k not in ignore and v != parser.get_default(k)}
 
 
@@ -148,16 +204,20 @@ def fiq_queries(dataset: FashionIQDataset, category: str) -> List[Query]:
 # Image features and cache
 # ----------------------------------------------------------------------------------------------------------------------
 
+IMAGE_KEYS = {'image', 'image_name', 'reference_image', 'reference_name'}
+
+
 @torch.no_grad()
 def encode_images(dataset: Dataset, encoder: Callable[[torch.Tensor], torch.Tensor], num_workers: int,
-                  desc: str) -> Tuple[torch.Tensor, List[str], int]:
+                  desc: str) -> Tuple[torch.Tensor, List[str], int, Dict[str, list]]:
     """
-    Run `encoder` on every image of `dataset` (batches of 32). Returns the features (on CPU), the image names and
-    the number of images that could not be loaded (they are skipped, never silently).
+    Run `encoder` on every image of `dataset` (batches of 32). Returns the features (on CPU), the image names, the
+    number of images that could not be loaded (they are skipped, never silently) and the extra per-image values
+    yielded by the dataset (e.g. PSNR / SSIM of processed reference images), as lists aligned with the names.
     """
     loader = DataLoader(dataset=dataset, batch_size=BATCH_SIZE, num_workers=num_workers, pin_memory=True,
                         collate_fn=collate_fn)
-    features, names = [], []
+    features, names, extras = [], [], {}
     print(f"extracting features: {desc}")
     for batch in tqdm(loader, desc=desc):
         if batch is None:  # every image of the batch failed to load
@@ -170,12 +230,15 @@ def encode_images(dataset: Dataset, encoder: Callable[[torch.Tensor], torch.Tens
             batch_names = batch.get('reference_name')
         features.append(encoder(images).cpu())
         names.extend(batch_names)
+        for key, value in batch.items():
+            if key not in IMAGE_KEYS:
+                extras.setdefault(key, []).extend(value.tolist() if torch.is_tensor(value) else list(value))
     n_missing = len(dataset) - len(names)
     if n_missing:
         print(f"WARNING: {n_missing}/{len(dataset)} images of {desc} could not be loaded and were skipped")
     if not features:
         raise RuntimeError(f"No image of {desc} could be loaded")
-    return torch.vstack(features), names, n_missing
+    return torch.vstack(features), names, n_missing, extras
 
 
 def clip_image_encoder(clip_model: CLIP, flip: bool) -> Callable[[torch.Tensor], torch.Tensor]:
@@ -206,10 +269,11 @@ class FeatureCache:
         readable = '-'.join(str(key[k]) for k in ['kind', 'dataset', 'split', 'subset', 'model', 'preprocess']
                             if key.get(k) is not None)
         readable = readable.replace('/', '').replace(' ', '')
-        return self.cache_dir / f"{readable}{'-flip' if key.get('flip') else ''}-{digest}.pt"
+        processed = '-processed' if key.get('processing') else ''
+        return self.cache_dir / f"{readable}{'-flip' if key.get('flip') else ''}{processed}-{digest}.pt"
 
-    def get_or_compute(self, key: dict, compute: Callable[[], Tuple[torch.Tensor, List[str], int]]) \
-            -> Tuple[torch.Tensor, List[str], int]:
+    def get_or_compute(self, key: dict, compute: Callable[[], Tuple[torch.Tensor, List[str], int, dict]]) \
+            -> Tuple[torch.Tensor, List[str], int, dict]:
         if self.cache_dir is None:
             return compute()
         path = self.path(key)
@@ -218,14 +282,14 @@ class FeatureCache:
             if data.get('key') == key:
                 print(f"[cache] loaded {path.name}")
                 self.hits.append(path.name)
-                return data['features'], data['names'], data['n_missing']
-        features, names, n_missing = compute()
+                return data['features'], data['names'], data['n_missing'], data.get('extras', {})
+        features, names, n_missing, extras = compute()
         tmp = path.with_suffix('.tmp')
-        torch.save({'key': key, 'features': features, 'names': names, 'n_missing': n_missing}, tmp)
+        torch.save({'key': key, 'features': features, 'names': names, 'n_missing': n_missing, 'extras': extras}, tmp)
         os.replace(tmp, path)
         print(f"[cache] saved {path.name}")
         self.misses.append(path.name)
-        return features, names, n_missing
+        return features, names, n_missing, extras
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -249,11 +313,15 @@ def _fiq_caption_pairs(query: Query) -> Tuple[str, str]:
 
 @torch.no_grad()
 def encode_token_queries(clip_model: CLIP, queries: List[Query], tokens: Dict[str, torch.Tensor],
-                         fiq: bool = False) -> torch.Tensor:
+                         fiq: bool = False, templates: Optional[List[str]] = None) -> torch.Tensor:
     """
     Normalized features of "a photo of $ that {caption}" with $ replaced by the pseudo token of the reference image.
     FashionIQ joins its two captions in both orders and averages the two normalized features.
+    With several templates (--prompt-set ensemble) the normalized features of every template (and caption order) are
+    averaged.
     """
+    if templates is not None and templates != [QUERY_TEMPLATE]:
+        return _encode_token_queries_ensemble(clip_model, queries, tokens, fiq, templates)
     predicted = []
     for i in tqdm(range(0, len(queries), BATCH_SIZE), desc='encoding queries'):
         chunk = queries[i:i + BATCH_SIZE]
@@ -272,6 +340,27 @@ def encode_token_queries(clip_model: CLIP, queries: List[Query], tokens: Dict[st
             features = encode_with_pseudo_tokens(clip_model, clip.tokenize(texts, context_length=77).to(device),
                                                  batch_tokens)
             predicted.append(F.normalize(features))
+    return torch.vstack(predicted)
+
+
+@torch.no_grad()
+def _encode_token_queries_ensemble(clip_model: CLIP, queries: List[Query], tokens: Dict[str, torch.Tensor],
+                                   fiq: bool, templates: List[str]) -> torch.Tensor:
+    predicted = []
+    for i in tqdm(range(0, len(queries), BATCH_SIZE), desc=f'encoding queries ({len(templates)} templates)'):
+        chunk = queries[i:i + BATCH_SIZE]
+        batch_tokens = torch.vstack([tokens[q.reference].unsqueeze(0) for q in chunk]).to(device)
+        captions = [list(_fiq_caption_pairs(q)) if fiq else [q.captions[0]] for q in chunk]
+        total = 0
+        for template in templates:
+            for order in range(len(captions[0])):
+                texts = [template.format(c[order]) for c in captions]
+                tokenized = clip.tokenize(texts, context_length=77).to(device)
+                if not bool((tokenized == PSEUDO_TOKEN_ID).any(dim=1).all()):
+                    raise ValueError(f"template '{template}' loses the '$' token after tokenization")
+                features = encode_with_pseudo_tokens(clip_model, tokenized, batch_tokens)
+                total = total + F.normalize(features)
+        predicted.append(F.normalize(total))
     return torch.vstack(predicted)
 
 
@@ -450,6 +539,21 @@ def circo_metrics(top_indices: np.ndarray, top_scores: np.ndarray, gallery_names
 # Pipeline
 # ----------------------------------------------------------------------------------------------------------------------
 
+def load_phi(exp_name: str, checkpoint: str, clip_model: CLIP) -> Phi:
+    """
+    A phi trained by train_phi.py (data/phi_models/<exp_name>/checkpoints/<checkpoint>), in eval mode
+    """
+    phi_path = PROJECT_ROOT / 'data' / "phi_models" / exp_name
+    if not phi_path.exists():
+        raise ValueError(f"Experiment {exp_name} not found")
+    hyperparameters = json.load(open(phi_path / "hyperparameters.json"))
+    phi = Phi(input_dim=clip_model.visual.output_dim, hidden_dim=clip_model.visual.output_dim * 4,
+              output_dim=clip_model.token_embedding.embedding_dim, dropout=hyperparameters['phi_dropout'])
+    phi = phi.to(device)
+    phi.load_state_dict(torch.load(phi_path / 'checkpoints' / checkpoint, map_location=device)[phi.__class__.__name__])
+    return phi.eval()
+
+
 class RetrievalPipeline:
     """
     Loads the model given by the command line, extracts (or loads from cache) the features and scores the queries of
@@ -467,8 +571,14 @@ class RetrievalPipeline:
         self._memo = {}  # reference features/tokens are shared by the three FashionIQ categories
         self.flip_reference = args.tta in ['flip-ref', 'flip-both']
         self.flip_gallery = args.tta in ['flip-gallery', 'flip-both']
+        self.templates = PROMPT_SETS[args.prompt_set]
+        # Degradation / restoration / frequency filter of the reference images (None = original images)
+        self.reference_processor = ReferenceProcessor.from_args(args)
+        self.reference_info: Dict[str, dict] = {}  # reference name -> processing information (PSNR, method...)
+        self.attr_info: Dict[str, dict] = {}  # query id -> attribute re-ranking information
 
         self.phi = None
+        self.interp_phi = None
         self.oti_tokens = None
         self.clip_model = None
         self.cbir_features = None
@@ -477,6 +587,10 @@ class RetrievalPipeline:
             self.cbir_features = parse_cbir_features(args.cbir_features)
         if args.eval_type != 'cbir' or args.cbir_text_weight != 0:
             self._load_models()
+        self.reranker = None
+        if args.attr_rerank:
+            from attributes.rerank import AttributeReranker
+            self.reranker = AttributeReranker(args, self.dataset, self.split, self.reference_processor)
 
     # Models -----------------------------------------------------------------------------------------------------------
 
@@ -489,9 +603,13 @@ class RetrievalPipeline:
             with open(experiment_path / 'hyperparameters.json') as f:
                 hyperparameters = json.load(f)
             clip_model_name = hyperparameters['clip_model_name']
-            pseudo_tokens = torch.load(experiment_path / 'ema_oti_pseudo_tokens.pt', map_location=device)
+            pseudo_tokens = torch.load(experiment_path / args.token_file, map_location=device)
             with open(experiment_path / 'image_names.pkl', 'rb') as f:
-                self.oti_tokens = token_dict(pickle.load(f), pseudo_tokens)
+                names = pickle.load(f)
+            if len(names) != len(pseudo_tokens):
+                raise ValueError(f"{args.token_file} has {len(pseudo_tokens)} tokens but image_names.pkl has "
+                                 f"{len(names)} names")
+            self.oti_tokens = token_dict(names, pseudo_tokens)
         elif args.eval_type == 'phi':
             phi_path = PROJECT_ROOT / 'data' / "phi_models" / args.exp_name
             if not phi_path.exists():
@@ -511,13 +629,10 @@ class RetrievalPipeline:
         self.clip_model_name = clip_model_name
 
         if args.eval_type == 'phi':
-            phi = Phi(input_dim=clip_model.visual.output_dim, hidden_dim=clip_model.visual.output_dim * 4,
-                      output_dim=clip_model.token_embedding.embedding_dim, dropout=hyperparameters['phi_dropout'])
-            phi = phi.to(device)
-            phi.load_state_dict(
-                torch.load(phi_path / 'checkpoints' / args.phi_checkpoint_name, map_location=device)[
-                    phi.__class__.__name__])
-            self.phi = phi.eval()
+            self.phi = load_phi(args.exp_name, args.phi_checkpoint_name, clip_model)
+        if args.interp_phi is not None:
+            exp_name, _, checkpoint = args.interp_phi.partition(':')
+            self.interp_phi = load_phi(exp_name, checkpoint or 'phi_last.pt', clip_model)
 
         self.preprocess = build_preprocess(args.preprocess_type, clip_model.visual.input_resolution, clip_preprocess,
                                            args.targetpad_ratio, args.interp)
@@ -554,7 +669,7 @@ class RetrievalPipeline:
             return circo_queries(dataset)
         return fiq_queries(dataset, category)
 
-    def _reference_images(self, preprocess) -> ImageListDataset:
+    def reference_names_and_paths(self) -> Tuple[List[str], list]:
         """
         The unique reference images of the split, in the order used by the original code
         """
@@ -565,14 +680,27 @@ class RetrievalPipeline:
             names = list(dict.fromkeys(str(a['reference_img_id']) for a in dataset.annotations))
         else:
             names = [t['candidate'] for t in dataset.triplets]
-        return ImageListDataset(names, [dataset.image_path(n) for n in names], preprocess, split=self.split)
+        return names, [dataset.image_path(n) for n in names]
+
+    def _reference_images(self, preprocess) -> ImageListDataset:
+        names, paths = self.reference_names_and_paths()
+        return ImageListDataset(names, paths, preprocess, split=self.split, transform=self.reference_processor)
+
+    def gallery_image_path(self, category: Optional[str] = None) -> Callable[[str], Path]:
+        """
+        Function giving the image file of a gallery image name
+        """
+        return self._gallery_dataset(None, category).image_path
 
     # Features -------------------------------------------------------------------------------------------------------
 
-    def _cache_key(self, kind: str, subset: str, n_items: int, flip: bool = False) -> dict:
+    def _cache_key(self, kind: str, subset: str, n_items: int, flip: bool = False,
+                   processing: Optional[str] = None) -> dict:
         key = {'version': CACHE_VERSION, 'kind': kind, 'dataset': self.dataset,
                'split': self._gallery_split() if subset.startswith('gallery') else self.split,
                'subset': subset, 'n_items': n_items, 'flip': flip}
+        if processing is not None:
+            key['processing'] = processing
         if kind == 'clip':
             key.update({'model': self.clip_model_name, 'preprocess': self.preprocess_key})
         else:
@@ -587,11 +715,15 @@ class RetrievalPipeline:
             encoder = clip_image_encoder(self.clip_model, flip)
         else:
             encoder = lambda x: x  # cbir features are computed by the dataset 'preprocess'
-        key = self._cache_key(kind, subset, len(dataset), flip)
-        features, names, n_missing = self.cache.get_or_compute(
+        processor = getattr(dataset, 'transform', None)
+        key = self._cache_key(kind, subset, len(dataset), flip, processor.key if processor is not None else None)
+        features, names, n_missing, extras = self.cache.get_or_compute(
             key, lambda: encode_images(dataset, encoder, self.args.num_workers, desc))
         if n_missing:
             self.load_errors[f"{kind}:{subset}"] = n_missing
+        for k, values in extras.items():  # per-image processing information of the reference images
+            for name, value in zip(names, values):
+                self.reference_info.setdefault(name, {})[k] = value
         return features, names
 
     def gallery_features(self, category: Optional[str] = None) -> Tuple[torch.Tensor, List[str]]:
@@ -621,18 +753,26 @@ class RetrievalPipeline:
             'cbir', self._reference_images(CBIRFeatureExtractor()), 'references'))
 
     @torch.no_grad()
+    def _phi_tokens(self, phi) -> Dict[str, torch.Tensor]:
+        features, names = self.reference_features()
+        print("Extracting tokens using phi model")
+        tokens = [phi(features[i:i + BATCH_SIZE].to(device)).cpu() for i in range(0, len(names), BATCH_SIZE)]
+        return token_dict(names, torch.vstack(tokens))
+
+    @torch.no_grad()
     def reference_tokens(self) -> Dict[str, torch.Tensor]:
         if self.args.eval_type == 'oti':
-            return self.oti_tokens
+            if self.interp_phi is None:
+                return self.oti_tokens
 
-        def compute():
-            features, names = self.reference_features()
-            print("Extracting tokens using phi model")
-            tokens = [self.phi(features[i:i + BATCH_SIZE].to(device)).cpu()
-                      for i in range(0, len(names), BATCH_SIZE)]
-            return token_dict(names, torch.vstack(tokens))
+            def interpolate():  # token = (1 - lambda) * phi token + lambda * OTI token (plan 07, GT3)
+                phi_tokens = self._phi_tokens(self.interp_phi)
+                lam = self.args.interp_lambda
+                return {name: (1 - lam) * phi_tokens[name].to(device) + lam * token.to(device)
+                        for name, token in self.oti_tokens.items() if name in phi_tokens}
 
-        return self._memoized('tokens', compute)
+            return self._memoized('tokens', interpolate)
+        return self._memoized('tokens', lambda: self._phi_tokens(self.phi))
 
     # Scoring --------------------------------------------------------------------------------------------------------
 
@@ -681,23 +821,60 @@ class RetrievalPipeline:
         gallery, gallery_names = self.gallery_features(category)
         if eval_type in TOKEN_EVAL_TYPES:
             tokens = self.reference_tokens()
-            queries = self._keep_answerable(queries, tokens, gallery_names)
-            predicted = encode_token_queries(self.clip_model, queries, tokens, fiq)
+            available = tokens
+            if self.args.fusion_weight != 0:
+                available = set(tokens) & set(self.reference_features()[1])
+            queries = self._keep_answerable(queries, available, gallery_names)
+            predicted = encode_token_queries(self.clip_model, queries, tokens, fiq, self.templates)
         else:
-            if eval_type == 'text':
+            if eval_type == 'text' and self.args.fusion_weight == 0:
                 queries = self._keep_answerable(queries, None, gallery_names)
             else:
                 ref_features, ref_names = self.reference_features()
                 queries = self._keep_answerable(queries, set(ref_names), gallery_names)
-                ref_index = {n: i for i, n in enumerate(ref_names)}
-                image_features = F.normalize(ref_features[[ref_index[q.reference] for q in queries]].to(device))
             if eval_type == 'image':
-                predicted = image_features
+                predicted = self._image_query_features(queries)
             elif eval_type == 'text':
                 predicted = encode_text_queries(self.clip_model, queries, fiq)
             else:  # sum
-                predicted = F.normalize(image_features + encode_text_queries(self.clip_model, queries, fiq))
-        return predicted @ gallery.T, gallery_names, queries
+                predicted = F.normalize(self._image_query_features(queries)
+                                        + encode_text_queries(self.clip_model, queries, fiq))
+        similarity = predicted @ gallery.T
+        if self.args.fusion_weight != 0:  # score = cos(query, g) + alpha * cos(reference image, g) (plan 04, 4.4)
+            similarity = similarity + self.args.fusion_weight * (self._image_query_features(queries) @ gallery.T)
+        return similarity, gallery_names, queries
+
+    def _image_query_features(self, queries: List[Query]) -> torch.Tensor:
+        """
+        Normalized CLIP features of the reference image of each query
+        """
+        ref_features, ref_names = self.reference_features()
+        ref_index = {n: i for i, n in enumerate(ref_names)}
+        return F.normalize(ref_features[[ref_index[q.reference] for q in queries]].to(device))
+
+    def scored(self, category: Optional[str] = None) -> Tuple[torch.Tensor, List[str], List[Query]]:
+        """
+        score() followed, with --attr-rerank, by the re-ranking of the top-K with the attribute meters
+        """
+        similarity, gallery_names, queries = self.score(category)
+        if self.reranker is not None:
+            similarity, info = self.reranker.rerank(
+                similarity, gallery_names, queries, self.gallery_image_path(category),
+                dict(zip(*self.reference_names_and_paths())),
+                exclude_reference=self.dataset == 'cirr' or self.args.exclude_reference, category=category)
+            self.attr_info.update(info)
+        return similarity, gallery_names, queries
+
+    def _annotate(self, records: List[dict]) -> List[dict]:
+        """
+        Add the processing of the reference image and the attribute re-ranking details to the dump records
+        """
+        for record in records:
+            if record['reference'] in self.reference_info:
+                record['reference_processing'] = self.reference_info[record['reference']]
+            if record['qid'] in self.attr_info:
+                record['attributes'] = self.attr_info[record['qid']]
+        return records
 
     # Validation -----------------------------------------------------------------------------------------------------
 
@@ -706,31 +883,33 @@ class RetrievalPipeline:
         Validation metrics (same keys as the original code) and one dump record per query
         """
         if self.dataset == 'cirr':
-            similarity, gallery_names, queries = self.score()
+            similarity, gallery_names, queries = self.scored()
             ranking = rank_cirr(similarity, gallery_names, queries)
-            return cirr_metrics(ranking, gallery_names, queries)
+            metrics, records = cirr_metrics(ranking, gallery_names, queries)
+            return metrics, self._annotate(records)
 
         if self.dataset == 'circo':
-            similarity, gallery_names, queries = self.score()
+            similarity, gallery_names, queries = self.scored()
             top_indices, top_scores = rank_topk(similarity, gallery_names, queries, self.args.exclude_reference,
                                                 max(50, DUMP_TOP_K))
-            return circo_metrics(top_indices, top_scores, gallery_names, queries)
+            metrics, records = circo_metrics(top_indices, top_scores, gallery_names, queries)
+            return metrics, self._annotate(records)
 
         metrics, records = {}, []
         for category in FIQ_DRESS_TYPES:
-            similarity, gallery_names, queries = self.score(category)
+            similarity, gallery_names, queries = self.scored(category)
             category_metrics, category_records = fiq_metrics(similarity, gallery_names, queries,
                                                              self.args.exclude_reference)
             metrics.update({f"{category}_{k}": v for k, v in category_metrics.items()})
             records.extend(category_records)
         for k in ['fiq_recall_at10', 'fiq_recall_at50']:
             metrics[f"average_{k}"] = float(np.mean([metrics[f"{c}_{k}"] for c in FIQ_DRESS_TYPES]))
-        return metrics, records
+        return metrics, self._annotate(records)
 
     # Test submissions -----------------------------------------------------------------------------------------------
 
     def cirr_submission(self) -> Tuple[dict, dict, List[dict]]:
-        similarity, gallery_names, queries = self.score()
+        similarity, gallery_names, queries = self.scored()
         ranking = rank_cirr(similarity, gallery_names, queries)
         submission = {'version': 'rc2', 'metric': 'recall'}
         group_submission = {'version': 'rc2', 'metric': 'recall_subset'}
@@ -742,10 +921,10 @@ class RetrievalPipeline:
             records.append({'qid': q.qid, 'reference': q.reference, 'caption': q.captions[0], 'group': q.group,
                             'top': _top(gallery_names, ranking['ranked'][i], ranking['scores'][i]),
                             'group_top': [gallery_names[j] for j in ranking['group_ranked'][i]]})
-        return submission, group_submission, records
+        return submission, group_submission, self._annotate(records)
 
     def circo_submission(self) -> Tuple[dict, List[dict]]:
-        similarity, gallery_names, queries = self.score()
+        similarity, gallery_names, queries = self.scored()
         top_indices, top_scores = rank_topk(similarity, gallery_names, queries, self.args.exclude_reference,
                                             max(50, DUMP_TOP_K))
         submission, records = {}, []
@@ -753,10 +932,10 @@ class RetrievalPipeline:
             submission[q.qid] = [gallery_names[j] for j in top_indices[i][:50]]
             records.append({'qid': q.qid, 'reference': q.reference, 'caption': q.captions[0],
                             'top': _top(gallery_names, top_indices[i], top_scores[i])})
-        return submission, records
+        return submission, self._annotate(records)
 
     def info(self) -> dict:
-        return {
+        info = {
             'clip_model': getattr(self, 'clip_model_name', None),
             'preprocess': getattr(self, 'preprocess_key', None),
             'tta': self.args.tta,
@@ -765,3 +944,18 @@ class RetrievalPipeline:
             'cache_hits': self.cache.hits,
             'cache_writes': self.cache.misses,
         }
+        if self.reference_processor is not None:
+            values = list(self.reference_info.values())
+            summary = {'processing': self.reference_processor.key, 'n_references': len(values)}
+            for k in ['psnr', 'ssim']:
+                numbers = [v[k] for v in values if k in v]
+                if numbers:
+                    summary[f'mean_{k}'] = float(np.mean(numbers))
+            for k in ['degradation', 'restoration']:
+                labels = [v[k] for v in values if k in v]
+                if labels:
+                    summary[f'{k}_counts'] = {label: labels.count(label) for label in sorted(set(labels))}
+            info['reference_processing'] = summary
+        if self.reranker is not None:
+            info['attributes'] = self.reranker.summary()
+        return info
