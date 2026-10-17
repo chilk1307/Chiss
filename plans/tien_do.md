@@ -1,6 +1,6 @@
 # Tiến độ dự án
 
-**Cập nhật:** 18/10/2026 (Ngày 2): Chí làm xong C9, C11, C12, C13, C15 (Ngày 4–8); C10, C14, C21, C22 làm một phần; C16 chưa làm. Code từ 18/10 chưa commit, chưa push.
+**Cập nhật:** 18/10/2026 (Ngày 2): Chí làm xong C9, C11, C12, C13, C15 (Ngày 4–8); C10, C14, C21, C22 làm một phần; C16 chưa làm. Đã push lên GitHub (commit `1dd0bbe`).
 **Cách dùng:** làm xong việc nào thì đổi `- [ ]` thành `- [x]`, ghi ngày xong ở cuối dòng, rồi cập nhật bảng tóm tắt bên dưới. Việc làm được một phần thì giữ `- [ ]` và ghi "(một phần: …)".
 
 ## Tóm tắt
@@ -124,7 +124,7 @@ Chi tiết: [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md).
 
 ## Việc tiếp theo
 
-1. Chí: sửa lệch của C10 trước tiên (Doanh cần code train từ Ngày 5–6); tạo `restore_rules.json` và công cụ hiệu chỉnh cho C14; làm C21, C16, phần còn lại của C22; cập nhật `CHANGES.md` và bảng giao kèo ở [01](01_nen_tang_danh_gia.md); rồi commit và push. Không push trước khi C10 qua kiểm thử.
+1. Chí: sửa lệch của C10 trước tiên (Doanh cần code train từ Ngày 5–6); tạo `restore_rules.json` và công cụ hiệu chỉnh cho C14; làm C21, C16, phần còn lại của C22; cập nhật `CHANGES.md` và bảng giao kèo ở [01](01_nen_tang_danh_gia.md). Code đã lên GitHub, nhưng Doanh chưa nên dùng `train_phi.py` mới cho thí nghiệm chính thức trước khi C10 qua kiểm thử.
 2. Chí: làm tay phần còn lại của C1; chạy notebook một lần trên Colab để nghiệm thu C2.
 3. Hòa: H1, H2 ngay khi code lên GitHub. Ô "Kiểm tra dữ liệu (E1.2)" của notebook đã dùng được `tools/check_datasets.py`, thay cho đoạn Python chép tay ở H2.
 4. Doanh: D1 ngay khi code lên GitHub.
