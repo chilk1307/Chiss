@@ -1,0 +1,2 @@
+epoch,epoch_total_loss,epoch_gpt_loss,epoch_distillation_loss
+100,4.710886372052706,0.1387613690434358,4.6068153491387

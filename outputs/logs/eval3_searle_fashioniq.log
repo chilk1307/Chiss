@@ -1,0 +1,33 @@
+Downloading: "https://github.com/miccunifi/SEARLE/archive/main.zip" to /root/.cache/torch/hub/main.zip
+Downloading: "https://github.com/miccunifi/SEARLE/releases/download/weights/SEARLE_ViT-B32.pt" to /root/.cache/torch/hub/checkpoints/SEARLE_ViT-B32.pt
+  0%|          | 0.00/24.0M [00:00<?, ?B/s] 44%|████▍     | 10.7M/24.0M [00:00<00:00, 112MB/s] 89%|████████▊ | 21.3M/24.0M [00:00<00:00, 105MB/s]100%|██████████| 24.0M/24.0M [00:00<00:00, 110MB/s]
+Target pad preprocess pipeline is used
+FashionIQ val - ['dress', 'toptee', 'shirt'] dataset in relative mode initialized
+Extracting tokens using phi model
+  0%|          | 0/46 [00:00<?, ?it/s]  2%|▏         | 1/46 [00:01<01:22,  1.82s/it] 11%|█         | 5/46 [00:01<00:12,  3.35it/s] 20%|█▉        | 9/46 [00:02<00:05,  6.59it/s] 26%|██▌       | 12/46 [00:02<00:05,  6.13it/s] 35%|███▍      | 16/46 [00:02<00:03,  9.31it/s] 43%|████▎     | 20/46 [00:02<00:02, 12.83it/s] 50%|█████     | 23/46 [00:03<00:02,  8.91it/s] 59%|█████▊    | 27/46 [00:03<00:01, 12.07it/s] 67%|██████▋   | 31/46 [00:04<00:01,  9.50it/s] 78%|███████▊  | 36/46 [00:04<00:00, 13.42it/s] 87%|████████▋ | 40/46 [00:04<00:00, 16.58it/s] 93%|█████████▎| 43/46 [00:04<00:00, 12.47it/s]100%|██████████| 46/46 [00:04<00:00,  9.25it/s]
+Eval type = searle 	 exp name = None 	
+FashionIQ val - ['shirt'] dataset in classic mode initialized
+extracting image features FashionIQDataset - val
+  0%|          | 0/55 [00:00<?, ?it/s]  2%|▏         | 1/55 [00:01<01:00,  1.13s/it] 13%|█▎        | 7/55 [00:01<00:06,  7.46it/s] 22%|██▏       | 12/55 [00:01<00:03, 12.70it/s] 35%|███▍      | 19/55 [00:01<00:01, 21.30it/s] 44%|████▎     | 24/55 [00:01<00:01, 18.33it/s] 55%|█████▍    | 30/55 [00:01<00:01, 24.57it/s] 64%|██████▎   | 35/55 [00:02<00:00, 21.54it/s] 75%|███████▍  | 41/55 [00:02<00:00, 20.55it/s] 87%|████████▋ | 48/55 [00:02<00:00, 27.43it/s] 96%|█████████▋| 53/55 [00:02<00:00, 28.88it/s]100%|██████████| 55/55 [00:02<00:00, 18.75it/s]
+FashionIQ val - ['shirt'] dataset in relative mode initialized
+  0%|          | 0/8 [00:00<?, ?it/s]  0%|          | 0/8 [00:01<?, ?it/s]
+Traceback (most recent call last):
+  File "src/validate.py", line 526, in <module>
+    main()
+  File "src/validate.py", line 498, in main
+    fiq_metrics = fiq_val_retrieval(args.dataset_path, dress_type, clip_model_name, ref_names_list,
+  File "/content/venv/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "src/validate.py", line 128, in fiq_val_retrieval
+    return fiq_compute_val_metrics(relative_val_dataset, clip_model, index_features, index_names, ref_names_list,
+  File "/content/venv/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "src/validate.py", line 83, in fiq_compute_val_metrics
+    predicted_features, target_names = fiq_generate_val_predictions(clip_model, relative_val_dataset, ref_names_list,
+  File "/content/venv/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "src/validate.py", line 54, in fiq_generate_val_predictions
+    batch_tokens = torch.vstack([pseudo_tokens[ref_names_list.index(ref)].unsqueeze(0) for ref in reference_names])
+  File "src/validate.py", line 54, in <listcomp>
+    batch_tokens = torch.vstack([pseudo_tokens[ref_names_list.index(ref)].unsqueeze(0) for ref in reference_names])
+ValueError: 'B002NCIATQ' is not in list

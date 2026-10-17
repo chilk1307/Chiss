@@ -127,6 +127,8 @@ def oti_inversion(args):
 
     # Start the loop
     for batch_idx, batch in enumerate(tqdm(loader)):
+        if batch is None:  # every image of the batch failed to load
+            continue
         # Load the batch
         images = batch.get('image')
         names = batch.get('image_name')

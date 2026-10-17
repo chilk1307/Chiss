@@ -14,3 +14,16 @@ outputs/*
 !outputs/scripts/
 !outputs/prev_results_oct5/
 !outputs/submissions/
+# small files of the reproduction (reports, environment, OTI merge script, eval logs, phi_B32 metrics)
+!outputs/REPORT*.md
+!outputs/pip_freeze.txt
+!outputs/merge_oti.py
+!outputs/logs/
+outputs/logs/*
+!outputs/logs/eval*.log
+!outputs/phi_models/
+outputs/phi_models/*
+!outputs/phi_models/phi_B32/
+outputs/phi_models/phi_B32/*
+!outputs/phi_models/phi_B32/*.csv
+!outputs/phi_models/phi_B32/*.json

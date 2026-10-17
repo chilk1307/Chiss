@@ -1,0 +1,31 @@
+  0%|                                               | 0.00/338M [00:00<?, ?iB/s]  0%|                                       | 624k/338M [00:00<00:55, 6.38MiB/s]  2%|▋                                     | 5.84M/338M [00:00<00:10, 34.7MiB/s]  5%|█▊                                    | 15.8M/338M [00:00<00:05, 61.0MiB/s]  7%|██▋                                   | 23.5M/338M [00:00<00:05, 63.8MiB/s] 10%|███▊                                  | 34.0M/338M [00:00<00:04, 78.6MiB/s] 13%|█████                                 | 44.8M/338M [00:00<00:03, 89.5MiB/s] 17%|██████▎                               | 56.4M/338M [00:00<00:02, 99.3MiB/s] 20%|███████▍                              | 65.9M/338M [00:00<00:02, 99.2MiB/s] 22%|████████▍                             | 75.4M/338M [00:00<00:02, 93.1MiB/s] 26%|██████████▎                            | 89.1M/338M [00:01<00:02, 108MiB/s] 30%|████████████▏                           | 103M/338M [00:01<00:02, 117MiB/s] 35%|█████████████▊                          | 117M/338M [00:01<00:01, 127MiB/s] 39%|███████████████▍                        | 130M/338M [00:01<00:01, 132MiB/s] 42%|████████████████▉                       | 143M/338M [00:01<00:01, 122MiB/s] 46%|██████████████████▎                     | 155M/338M [00:01<00:01, 114MiB/s] 49%|███████████████████▋                    | 166M/338M [00:01<00:01, 106MiB/s] 52%|████████████████████▉                   | 177M/338M [00:01<00:01, 108MiB/s] 56%|██████████████████████▍                 | 189M/338M [00:01<00:01, 114MiB/s] 59%|███████████████████████▋                | 200M/338M [00:02<00:01, 102MiB/s] 63%|█████████████████████████▎              | 214M/338M [00:02<00:01, 112MiB/s] 67%|██████████████████████████▋             | 225M/338M [00:02<00:01, 115MiB/s] 70%|████████████████████████████            | 237M/338M [00:02<00:00, 116MiB/s] 74%|█████████████████████████████▍          | 248M/338M [00:02<00:00, 114MiB/s] 77%|██████████████████████████████▊         | 260M/338M [00:02<00:00, 116MiB/s] 80%|████████████████████████████████▏       | 271M/338M [00:02<00:00, 112MiB/s] 84%|█████████████████████████████████▍      | 282M/338M [00:02<00:00, 108MiB/s] 87%|██████████████████████████████████▋     | 292M/338M [00:02<00:00, 101MiB/s] 90%|████████████████████████████████████    | 304M/338M [00:03<00:00, 108MiB/s] 93%|█████████████████████████████████████▎  | 315M/338M [00:03<00:00, 104MiB/s] 96%|██████████████████████████████████████▌ | 325M/338M [00:03<00:00, 101MiB/s] 99%|███████████████████████████████████████▊| 336M/338M [00:03<00:00, 104MiB/s]100%|████████████████████████████████████████| 338M/338M [00:03<00:00, 104MiB/s]
+Target pad preprocess pipeline is used
+FashionIQ val - ['dress', 'toptee', 'shirt'] dataset in relative mode initialized
+Extracting tokens using phi model
+  0%|          | 0/46 [00:00<?, ?it/s]  2%|▏         | 1/46 [00:15<11:40, 15.57s/it] 13%|█▎        | 6/46 [00:15<01:17,  1.93s/it] 24%|██▍       | 11/46 [00:26<01:12,  2.09s/it] 26%|██▌       | 12/46 [00:27<01:06,  1.96s/it] 33%|███▎      | 15/46 [00:28<00:40,  1.30s/it] 37%|███▋      | 17/46 [00:32<00:42,  1.48s/it] 46%|████▌     | 21/46 [00:38<00:37,  1.51s/it] 52%|█████▏    | 24/46 [00:39<00:24,  1.10s/it] 57%|█████▋    | 26/46 [00:41<00:22,  1.14s/it] 67%|██████▋   | 31/46 [00:46<00:16,  1.08s/it] 70%|██████▉   | 32/46 [00:47<00:13,  1.02it/s] 74%|███████▍  | 34/46 [00:48<00:10,  1.14it/s] 78%|███████▊  | 36/46 [00:49<00:08,  1.22it/s] 85%|████████▍ | 39/46 [00:51<00:04,  1.40it/s] 87%|████████▋ | 40/46 [00:57<00:09,  1.59s/it] 89%|████████▉ | 41/46 [00:58<00:07,  1.41s/it] 91%|█████████▏| 42/46 [00:58<00:05,  1.26s/it] 96%|█████████▌| 44/46 [01:10<00:05,  2.82s/it]100%|██████████| 46/46 [01:10<00:00,  1.53s/it]
+Eval type = phi 	 exp name = phi_B32 	
+FashionIQ val - ['shirt'] dataset in classic mode initialized
+extracting image features FashionIQDataset - val
+  0%|          | 0/55 [00:00<?, ?it/s]  2%|▏         | 1/55 [00:06<06:10,  6.86s/it]  9%|▉         | 5/55 [00:07<00:53,  1.08s/it] 20%|██        | 11/55 [00:12<00:42,  1.03it/s] 29%|██▉       | 16/55 [00:13<00:26,  1.50it/s] 38%|███▊      | 21/55 [06:30<16:35, 29.27s/it] 47%|████▋     | 26/55 [06:33<09:14, 19.11s/it] 56%|█████▋    | 31/55 [06:37<05:10, 12.95s/it] 62%|██████▏   | 34/55 [06:39<03:35, 10.25s/it] 75%|███████▍  | 41/55 [06:43<01:25,  6.13s/it] 80%|████████  | 44/55 [06:46<00:55,  5.04s/it] 93%|█████████▎| 51/55 [06:49<00:12,  3.18s/it] 98%|█████████▊| 54/55 [06:52<00:02,  2.73s/it]100%|██████████| 55/55 [06:52<00:00,  7.51s/it]
+FashionIQ val - ['shirt'] dataset in relative mode initialized
+  0%|          | 0/8 [00:00<?, ?it/s]  0%|          | 0/8 [00:01<?, ?it/s]
+Traceback (most recent call last):
+  File "src/validate.py", line 526, in <module>
+    main()
+  File "src/validate.py", line 498, in main
+    fiq_metrics = fiq_val_retrieval(args.dataset_path, dress_type, clip_model_name, ref_names_list,
+  File "/content/venv/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "src/validate.py", line 128, in fiq_val_retrieval
+    return fiq_compute_val_metrics(relative_val_dataset, clip_model, index_features, index_names, ref_names_list,
+  File "/content/venv/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "src/validate.py", line 83, in fiq_compute_val_metrics
+    predicted_features, target_names = fiq_generate_val_predictions(clip_model, relative_val_dataset, ref_names_list,
+  File "/content/venv/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "src/validate.py", line 54, in fiq_generate_val_predictions
+    batch_tokens = torch.vstack([pseudo_tokens[ref_names_list.index(ref)].unsqueeze(0) for ref in reference_names])
+  File "src/validate.py", line 54, in <listcomp>
+    batch_tokens = torch.vstack([pseudo_tokens[ref_names_list.index(ref)].unsqueeze(0) for ref in reference_names])
+ValueError: 'B002NCIATQ' is not in list

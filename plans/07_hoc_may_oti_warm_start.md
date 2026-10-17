@@ -16,7 +16,7 @@
 | H15 | 11 | Hòa | E7.1a–d trên CIRCO val (E7.0 đã có từ H17). Thư mục kết quả: `E7.1a-random-lr0.02-circo`, `E7.1b-phi-lr0.02-circo`, `E7.1c-phi-lr0.005-circo`, `E7.1d-searle-lr0.02-circo`, `E7.1d-searle-lr0.005-circo`. E7.1e chỉ chạy khi Chí yêu cầu |
 | D15 | 12 (nếu còn GPU) | Doanh | E7.0 cho CIRR val + E7.2 |
 | — | Sau ngày 12 | Người còn GPU | E7.3–E7.5; E7.6 (cần [08](08_hoc_may_cai_tien_phi.md) mục 8.0–8.1) |
-| — | Sau E7.1e | Chí | Mục 7.8 (chế độ chính xác cao trong demo), chỉ khi H2 đúng |
+| — | Sau E7.1e | Chí | Mục 7.8 (chế độ chính xác cao trong demo), chỉ khi GT2 đúng |
 
 E7.1a-random-lr0.02-circo cũng là E6.2-P0-circo của [06](06_sinh_lai_cum_tu_gpt.md).
 
@@ -28,9 +28,9 @@ E7.1a-random-lr0.02-circo cũng là E6.2-P0-circo của [06](06_sinh_lai_cum_tu_
 
 ## Giả thuyết
 
-- **H1 (tốc độ):** khởi tạo bằng phi, OTI đạt chất lượng bằng OTI khởi tạo ngẫu nhiên 350 bước chỉ với ≤ 50 bước.
-- **H2 (chất lượng):** token phi + tinh chỉnh vài bước cho kết quả truy xuất tốt hơn token phi thuần.
-- **H3 (nội suy):** `token = (1 − λ) · token_phi + λ · token_OTI` với λ ở giữa tốt hơn cả hai đầu mút.
+- **GT1 (tốc độ):** khởi tạo bằng phi, OTI đạt chất lượng bằng OTI khởi tạo ngẫu nhiên 350 bước chỉ với ≤ 50 bước.
+- **GT2 (chất lượng):** token phi + tinh chỉnh vài bước cho kết quả truy xuất tốt hơn token phi thuần.
+- **GT3 (nội suy):** `token = (1 − λ) · token_phi + λ · token_OTI` với λ ở giữa tốt hơn cả hai đầu mút.
 
 ## Cài đặt
 
@@ -54,7 +54,7 @@ Nhờ snapshot, **một lần chạy 350 bước cho ra cả đường cong**, k
 
 `--eval-type oti` của `validate.py` cũ luôn đọc `ema_oti_pseudo_tokens.pt` ([validate.py:421](../SEARLE-main/src/validate.py#L421)). Trong module truy xuất chung ([01](01_nen_tang_danh_gia.md) mục 1.3), thêm:
 - `--token-file <tên file>`: chọn snapshot cần đánh giá.
-- `--interp-phi <exp>:<checkpoint>` và `--interp-lambda <λ>`: nội suy với token phi (cho H3).
+- `--interp-phi <exp>:<checkpoint>` và `--interp-lambda <λ>`: nội suy với token phi (cho GT3).
 
 ### 7.3. Cạm bẫy: EMA khi số bước ít
 
@@ -88,7 +88,7 @@ Chạy CIRCO val trước (chỉ 220 truy vấn, mỗi lần chạy vài phút),
 | E7.1e | CIRCO val | cấu hình tốt nhất | | 0 | Chỉ dùng cosine loss: không cần câu GPT (~700 MB), cần cho demo ([05](05_demo_va_bao_cao.md)) |
 | E7.2 | CIRR val | 2–3 cấu hình tốt nhất từ E7.1 | | | |
 | E7.3 | FIQ val (tập con) | cấu hình tốt nhất | | | Ghi rõ "tập con" vì thiếu ảnh |
-| E7.4 | CIRR val, CIRCO val | nội suy λ = 0, 0.25, 0.5, 0.75, 1 | | | H3 |
+| E7.4 | CIRR val, CIRCO val | nội suy λ = 0, 0.25, 0.5, 0.75, 1 | | | GT3 |
 | E7.5 | — | đo độ trễ mỗi truy vấn | | | batch 1 và batch 32; GPU và CPU |
 
 Mọi lần chạy E7.1–E7.3 đều lưu snapshot ở các bước 0, 10, 25, 50, 100, 200, 350.
@@ -105,7 +105,7 @@ Lưu ý: phi_B32 đã được train trên chính các ảnh này, nên đây l�
 
 - **E7.7 (tuỳ chọn):** chạy cấu hình warm-start tốt nhất trên ảnh tham chiếu bị suy giảm (bộ suy giảm của [03](03_do_ben_va_phuc_hoi_anh.md)). Câu hỏi: tinh chỉnh vài bước theo chính ảnh truy vấn có giúp token bền hơn phi thuần khi ảnh xấu không?
 
-## 7.8. Đưa vào demo: chế độ "chính xác cao" (chỉ làm nếu H2 đúng)
+## 7.8. Đưa vào demo: chế độ "chính xác cao" (chỉ làm nếu GT2 đúng)
 
 - Tinh chỉnh token bằng OTI warm-start k bước ngay lúc truy vấn; hiển thị thời gian xử lý.
 - OTI đầy đủ cần câu GPT (~700 MB) và danh sách concept của từng ảnh, quá nặng cho demo. Dùng biến thể chỉ có cosine loss (λ_gpt = 0) nếu E7.1e cho thấy vẫn có lợi.
@@ -116,21 +116,21 @@ Lưu ý: phi_B32 đã được train trên chính các ảnh này, nên đây l�
 
 1. **Đường cong chính:** trục x = số bước (thang log), trục y = CIRR R@1 và CIRCO mAP@10; mỗi đường là một kiểu khởi tạo (random, phi, searle); nét liền = token thường, nét đứt = token EMA; thêm đường ngang = phi thuần.
 2. **Bảng độ trễ:** phi thuần, warm-start 10/25/50 bước, OTI 350 bước (ms/truy vấn).
-3. **Bảng nội suy (H3):** chỉ số theo λ.
-4. **Kết luận** cho H1, H2, H3, kèm khoảng tin cậy bootstrap.
+3. **Bảng nội suy (GT3):** chỉ số theo λ.
+4. **Kết luận** cho GT1, GT2, GT3, kèm khoảng tin cậy bootstrap.
 
 ## Tiêu chí hoàn thành
 
 - [ ] `oti_inversion.py` có `--init`, `--snapshot-steps`; chạy với `--init random` (cùng seed) ra cùng token như trước, sai lệch không đáng kể.
 - [ ] Có đường cong cho CIRCO val và CIRR val.
-- [ ] Trả lời H1–H3 bằng số liệu có khoảng tin cậy.
-- [ ] Nếu H2 đúng: chuyển cấu hình tốt nhất sang demo (mục 7.8).
+- [ ] Trả lời GT1–GT3 bằng số liệu có khoảng tin cậy.
+- [ ] Nếu GT2 đúng: chuyển cấu hình tốt nhất sang demo (mục 7.8).
 
 ## Rủi ro
 
 | Rủi ro | Cách xử lý |
 |---|---|
-| OTI không tốt hơn phi (H2 sai) | Vẫn báo cáo; phân tích nguyên nhân (OTI bám chi tiết thị giác, khó kết hợp với văn bản?); thử nội suy H3 |
+| OTI không tốt hơn phi (GT2 sai) | Vẫn báo cáo; phân tích nguyên nhân (OTI bám chi tiết thị giác, khó kết hợp với văn bản?); thử nội suy GT3 |
 | lr 0.02 đẩy token ra xa điểm khởi tạo ngay những bước đầu | Đã có cấu hình lr 0.005; có thể thêm warmup cho lr |
 | Thời gian GPU trên Colab hạn chế | Dùng snapshot (một lần chạy cho cả đường cong); chạy CIRCO trước |
 | Tranh GPU với các thí nghiệm xử lý ảnh | Xử lý ảnh ưu tiên trước mốc M3; luồng học máy chạy vào thời gian GPU rảnh |

@@ -7,7 +7,7 @@
 2. Điểm test chính thức (CIRR, CIRCO) của SEARLE gốc, phi_B32 và cấu hình cuối.
 3. Kết quả thí nghiệm thuộc tính E2.0–E2.9.
 4. Ví dụ định tính và bản đồ che khuất.
-5. Kết quả train phân tích lượng dữ liệu và luồng học máy (nếu đã chạy).
+5. Kết quả train phân tích lượng dữ liệu, luồng học máy và bộ câu GPT (nếu đã chạy).
 
 ## 1. Chuẩn bị (Ngày 1, làm một lần)
 
@@ -34,7 +34,7 @@
 | Ngày | Ngày tháng | Việc | Cần có từ Chí | Mã thí nghiệm | GPU |
 |---|---|---|---|---|---|
 | 1 | T7 17/10 | H1 dựng Colab, đóng gói dữ liệu; H2 kiểm tra dữ liệu | C2 | E1.2 | không cần |
-| 2 | CN 18/10 | H3 tìm file subset CIRR; H4 sinh và nộp file test bằng code cũ | — | B8–B11 | T4/L4 |
+| 2 | CN 18/10 | H4 sinh file test của SEARLE gốc bằng code cũ; nộp test của SEARLE gốc và phi_B32 (H3 đã xong) | C3 (file nộp phi_B32 trong git) | B8–B11 | T4/L4 |
 | 3 | T2 19/10 | H5 kiểm tra không hồi quy, chạy lại baseline | C4 | E1.7a–f | T4/L4 |
 | 4 | T3 20/10 | H6 baseline CLIP và CBIR cổ điển | C5, C8 | E1.8, E1.9 | T4/L4 |
 | 5 | T4 21/10 | H7 kiểm tra dữ liệu bằng công cụ, khoảng tin cậy, gom kết quả | C7 | E1.2, E1.4 | không cần |
@@ -90,18 +90,12 @@ for t in ["dress", "shirt", "toptee"]:
 - Chép kết quả vào `$DRIVE/results/E1.2-dataset-check/report.md`, gửi Chí.
 - Nếu CIRCO thiếu ảnh: báo Chí ngay, vì ảnh hưởng cả val lẫn file nộp test.
 
-### H3. Tìm file subset CIRR (Ngày 2)
-```bash
-find $DRIVE -name "subset_*.json" 2>/dev/null
-```
-- Thấy file có `"metric": "recall_subset"` của phi_B32 → chép vào `$DRIVE/outputs/submissions/` và báo Chí.
-- Không thấy → sinh lại ở H4.
+### H3. File subset CIRR (đã xong)
+`subset_phi_B32_cirr.json` đã có trong `outputs/submissions/` của repo (`metric = recall_subset`, 4.148 truy vấn × 3 kết quả). Không cần làm gì.
 
-### H4. Sinh và nộp file test bằng code cũ (Ngày 2) — B8–B11
+### H4. Sinh file test của SEARLE gốc, nộp test (Ngày 2) — B8–B11
+File nộp của phi_B32 đã đủ 3 file, nằm trong repo sau khi Chí đưa `outputs/submissions/` vào git (C3): `/content/XLA_SEARLE/outputs/submissions/`. Chỉ cần sinh file cho SEARLE gốc:
 ```bash
-# phi_B32: sinh lại để có cả file subset (tên file kèm tên tập để không ghi đè nhau)
-$PY src/generate_test_submission.py --submission-name phi_B32_cirr --eval-type phi --exp-name phi_B32 --phi-checkpoint-name phi_last.pt --dataset cirr --dataset-path $DATA/CIRR
-# SEARLE gốc
 $PY src/generate_test_submission.py --submission-name searle_official_cirr  --eval-type searle --dataset cirr  --dataset-path $DATA/CIRR
 $PY src/generate_test_submission.py --submission-name searle_official_circo --eval-type searle --dataset circo --dataset-path $DATA/CIRCO
 # Chép ra Drive
@@ -110,7 +104,8 @@ cp data/test_submissions/cirr/*.json data/test_submissions/circo/*.json $DRIVE/o
 ```
 - Nộp lên server:
   - CIRR: `phi_B32_cirr.json`, `subset_phi_B32_cirr.json`, `searle_official_cirr.json`, `subset_searle_official_cirr.json`;
-  - CIRCO: `phi_B32_circo.json` (đã có sẵn), `searle_official_circo.json`.
+  - CIRCO: `phi_B32_circo.json`, `searle_official_circo.json`.
+  - Các file của phi_B32 lấy ở `/content/XLA_SEARLE/outputs/submissions/`; file của SEARLE gốc lấy ở `$DRIVE/outputs/submissions/`.
 - Gửi điểm nhận được cho Chí để ghi vào nhật ký (B8–B11).
 
 ### H5. Kiểm tra không hồi quy, chạy lại baseline (Ngày 3) — E1.7a–f
@@ -136,7 +131,7 @@ $PY src/validate.py $PHI --dataset fashioniq --dataset-path $DATA/FashionIQ $OPT
   ```python
   import json
   a = json.load(open("/content/XLA_SEARLE/SEARLE-main/data/test_submissions/cirr/check_phi_B32_cirr.json"))
-  b = json.load(open("/content/drive/MyDrive/SEARLE/outputs/submissions/phi_B32_cirr.json"))
+  b = json.load(open("/content/XLA_SEARLE/outputs/submissions/phi_B32_cirr.json"))
   keys = [k for k in a if k not in ("version", "metric")]
   print(sum(a[k][:10] == b[k][:10] for k in keys), "/", len(keys), "truy vấn có top-10 trùng")
   ```

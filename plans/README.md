@@ -39,6 +39,7 @@ Sau 2 tuần, nhóm có:
 | [nhiem_vu_Hoa.md](nhiem_vu_Hoa.md) | Việc của Hòa theo từng ngày, kèm lệnh chạy | Hòa |
 | [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md) | Việc của Doanh theo từng ngày, kèm lệnh chạy | Doanh |
 | [nhat_ky_thi_nghiem.md](nhat_ky_thi_nghiem.md) | Nhật ký thí nghiệm | Cả nhóm |
+| [tien_do.md](tien_do.md) | Bảng tiến độ có ô đánh dấu cho từng việc và từng mốc | Cả nhóm |
 
 ## 3. Phân công và cách phối hợp
 
@@ -61,7 +62,7 @@ Mã việc: **C** = Chí, **H** = Hòa, **D** = Doanh, **T** = lượt train tu�
 | Ngày | Ngày tháng | Chí (code, ý tưởng) | Hòa (Colab) | Doanh (Colab) | Mốc |
 |---|---|---|---|---|---|
 | 1 | T7 17/10 | C1 chia sẻ Drive; C2 notebook và script Colab; C3 gộp `datasets.py` | H1 dựng Colab; H2 kiểm tra dữ liệu | D1 dựng Colab; chuẩn bị ImageNet | |
-| 2 | CN 18/10 | C4 module truy xuất chung; C5 baseline CLIP | H3 tìm file subset CIRR; H4 sinh và nộp test bằng code cũ | D2 chạy thử train 2 epoch | **M1** |
+| 2 | CN 18/10 | C4 module truy xuất chung; C5 baseline CLIP | H4 sinh file test của SEARLE gốc, nộp test (H3 đã xong: file subset CIRR đã có) | D2 chạy thử train 2 epoch | **M1** |
 | 3 | T2 19/10 | C6 cờ tiền xử lý; C7 công cụ đánh giá; C8 CBIR cổ điển | H5 kiểm tra không hồi quy, chạy lại baseline | D3 đệm ảnh, nội suy (chiều) | |
 | 4 | T3 20/10 | C9 suy giảm, phục hồi, lọc tần số | H6 baseline CLIP và CBIR | D4 lật ảnh (TTA) | |
 | 5 | T4 21/10 | C10 code train mới; C11 tách ràng buộc, phân loại truy vấn | H7 khoảng tin cậy, gom kết quả | D5 mức sụt giảm; D6 phân tích tần số | **M2** |

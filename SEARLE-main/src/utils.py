@@ -37,6 +37,8 @@ def extract_image_features(dataset: Dataset, clip_model: CLIP, batch_size: Optio
 
     # Extract features
     for batch in tqdm(loader):
+        if batch is None:  # every image of the batch failed to load
+            continue
         images = batch.get('image')
         names = batch.get('image_name')
         if images is None:
@@ -50,6 +52,8 @@ def extract_image_features(dataset: Dataset, clip_model: CLIP, batch_size: Optio
             index_features.append(batch_features.cpu())
             index_names.extend(names)
 
+    if len(index_names) < len(dataset):
+        print(f"WARNING: {len(dataset) - len(index_names)}/{len(dataset)} images could not be loaded and were skipped")
     index_features = torch.vstack(index_features)
     return index_features, index_names
 
@@ -81,6 +85,8 @@ def extract_pseudo_tokens_with_phi(clip_model: CLIP, phi: Phi, dataset: Dataset)
     names_list = []
     print(f"Extracting tokens using phi model")
     for batch in tqdm(data_loader):
+        if batch is None:  # every image of the batch failed to load
+            continue
         images = batch.get('image')
         names = batch.get('image_name')
         if images is None:

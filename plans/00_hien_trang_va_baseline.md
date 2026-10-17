@@ -13,7 +13,8 @@ Nguồn số liệu: `outputs/REPORT.md`, `outputs/REPORT_results.md`, `outputs/
 - **File nộp test của phi_B32** (`outputs/submissions/`):
   - `phi_B32_cirr.json`: CIRR test1, 4.148 truy vấn × top-50, `metric = recall`;
   - `phi_B32_circo.json`: CIRCO test, 800 truy vấn × top-50.
-  - Còn thiếu file subset của CIRR (`metric = recall_subset`, để server tính Rs@K); chưa có điểm từ server.
+  - `subset_phi_B32_cirr.json`: file subset của CIRR (`metric = recall_subset`, 4.148 truy vấn × 3 kết quả), để server tính Rs@K.
+  - Chưa có điểm từ server.
 - **Lần chạy cũ quy mô nhỏ** `phi_b32` (OTI trên 6.824 ảnh) nằm trong `SEARLE-main/data/`.
 - **Demo web Flask** [demo/app.py](../SEARLE-main/demo/app.py): gallery, 3 chế độ truy vấn, đổi checkpoint, xem từ CLIP gần pseudo-word nhất, trang tự đánh giá tiến độ đọc kết quả thật trong `outputs/` (tự nhận diện file nộp test).
 
@@ -73,7 +74,7 @@ Shirt và toptee cao gần gấp đôi paper vì gallery nhỏ đi; chỉ dress 
 
 | Mô hình | CIRR test1 | CIRCO test |
 |---|---|---|
-| phi_B32 | đã có file chính; thiếu file subset; chưa có điểm | đã có file; chưa có điểm |
+| phi_B32 | đã có file chính và file subset; chưa có điểm | đã có file; chưa có điểm |
 | SEARLE gốc | chưa có file | chưa có file |
 
 ## Phát hiện từ đường cong train phi
@@ -121,7 +122,7 @@ Từ `outputs/phi_models/phi_B32/validation_metrics.csv` (CIRR val sau mỗi epo
 |---|---|
 | Hai bản `datasets.py`; lỗi bị nuốt; FIQ thiếu ảnh; CIRCO chưa xác nhận đủ ảnh | [01](01_nen_tang_danh_gia.md) mục 1.1–1.2 |
 | Quy trình chung, lưu kết quả, khoảng tin cậy | [01](01_nen_tang_danh_gia.md) mục 1.3–1.4 |
-| File subset CIRR, file nộp của SEARLE gốc, điểm từ server | [01](01_nen_tang_danh_gia.md) mục 1.5 |
+| File nộp của SEARLE gốc, điểm từ server | [01](01_nen_tang_danh_gia.md) mục 1.5 |
 | Số "Paper" chưa đối chiếu | [01](01_nen_tang_danh_gia.md) mục 1.6 |
 | Baseline đơn giản, baseline xử lý ảnh cổ điển, phân tích lỗi | [01](01_nen_tang_danh_gia.md) mục 1.8–1.13 |
 | Đóng góp riêng của nhóm | [02](02_kiem_chung_thuoc_tinh.md), [03](03_do_ben_va_phuc_hoi_anh.md), [04](04_tien_xu_ly_va_truy_van.md) |

@@ -1,0 +1,36 @@
+  0%|                                               | 0.00/338M [00:00<?, ?iB/s] 10%|███▉                                   | 33.8M/338M [00:00<00:00, 354MiB/s] 22%|████████▌                              | 73.9M/338M [00:00<00:00, 390MiB/s] 33%|█████████████▏                          | 111M/338M [00:00<00:00, 373MiB/s] 43%|█████████████████▍                      | 147M/338M [00:00<00:00, 340MiB/s] 55%|█████████████████████▉                  | 185M/338M [00:00<00:00, 360MiB/s] 65%|██████████████████████████              | 219M/338M [00:00<00:00, 339MiB/s] 75%|█████████████████████████████▉          | 252M/338M [00:00<00:00, 299MiB/s] 83%|█████████████████████████████████▎      | 282M/338M [00:00<00:00, 300MiB/s] 92%|████████████████████████████████████▊   | 311M/338M [00:01<00:00, 294MiB/s]100%|████████████████████████████████████████| 338M/338M [00:01<00:00, 324MiB/s]
+Target pad preprocess pipeline is used
+FashionIQ val - ['dress', 'toptee', 'shirt'] dataset in relative mode initialized
+Extracting tokens using phi model
+  0%|          | 0/135 [00:00<?, ?it/s]  1%|          | 1/135 [02:57<6:36:57, 177.74s/it]  4%|▎         | 5/135 [02:57<57:24, 26.49s/it]     7%|▋         | 10/135 [03:00<22:33, 10.83s/it]  7%|▋         | 10/135 [03:17<22:33, 10.83s/it]  8%|▊         | 11/135 [03:50<34:10, 16.54s/it] 13%|█▎        | 17/135 [03:50<14:24,  7.33s/it] 13%|█▎        | 17/135 [04:07<14:24,  7.33s/it] 16%|█▌        | 21/135 [04:26<15:02,  7.92s/it] 20%|██        | 27/135 [04:26<08:11,  4.55s/it] 20%|██        | 27/135 [04:37<08:11,  4.55s/it] 23%|██▎       | 31/135 [05:07<10:44,  6.20s/it] 27%|██▋       | 37/135 [05:07<06:15,  3.83s/it] 27%|██▋       | 37/135 [05:27<06:15,  3.83s/it] 30%|███       | 41/135 [05:46<08:31,  5.44s/it] 31%|███       | 42/135 [05:47<12:48,  8.26s/it]
+Traceback (most recent call last):
+  File "src/validate.py", line 526, in <module>
+    main()
+  File "src/validate.py", line 488, in main
+    pseudo_tokens, ref_names_list = extract_pseudo_tokens_with_phi(clip_model, phi, relative_val_dataset)
+  File "/content/venv/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "/content/SEARLE/src/utils.py", line 83, in extract_pseudo_tokens_with_phi
+    for batch in tqdm(data_loader):
+  File "/content/venv/lib/python3.8/site-packages/tqdm/std.py", line 1186, in __iter__
+    for obj in iterable:
+  File "/content/venv/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 530, in __next__
+    data = self._next_data()
+  File "/content/venv/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1204, in _next_data
+    return self._process_data(data)
+  File "/content/venv/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1250, in _process_data
+    data.reraise()
+  File "/content/venv/lib/python3.8/site-packages/torch/_utils.py", line 457, in reraise
+    raise exception
+IndexError: Caught IndexError in DataLoader worker process 2.
+Original Traceback (most recent call last):
+  File "/content/venv/lib/python3.8/site-packages/torch/utils/data/_utils/worker.py", line 287, in _worker_loop
+    data = fetcher.fetch(index)
+  File "/content/venv/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    return self.collate_fn(data)
+  File "/content/SEARLE/src/data_utils.py", line 24, in collate_fn
+    return torch.utils.data.dataloader.default_collate(batch)
+  File "/content/venv/lib/python3.8/site-packages/torch/utils/data/_utils/collate.py", line 128, in default_collate
+    elem = batch[0]
+IndexError: list index out of range
+

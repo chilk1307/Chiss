@@ -8,6 +8,7 @@
 3. Biểu đồ PSNR/SSIM so với điểm truy xuất (E3.4) và đường cong theo tần số cắt (E3.5).
 4. Kết quả phi bền: sàng lọc và bản đầy đủ (E3.8).
 5. Hình minh hoạ (E3.7), độ bền bộ đo thuộc tính (E3.6).
+6. Kết quả luồng học máy và bộ câu GPT (E7.2, E6.1, E6.4), nếu đã chạy.
 
 ## 1. Chuẩn bị (Ngày 1, làm một lần)
 
@@ -44,8 +45,8 @@
 | 9 | CN 25/10 | D10 train phi bền bản đầy đủ (nền); phục hồi tự động | C14 | E3.8b, E3.3 | A100 |
 | 10 | T2 26/10 | D11 PSNR/SSIM; đánh giá phi bền | C16 | E3.4, E3.8c | T4/L4 |
 | 11 | T3 27/10 | D12 độ bền bộ đo thuộc tính; hình minh hoạ | C12, C16 | E3.6, E3.7 | T4/L4 |
-| 12 | T4 28/10 | D13 chạy bổ sung; nộp test phi bền (nếu Chí quyết định ở C18); D15 OTI warm-start trên CIRR val (học máy, nếu còn GPU) | C18; kết quả E7.1 của Hòa | E7.2 | T4/L4 |
-| 13 | T5 29/10 | D14 tổng hợp bảng, hình → bàn giao Chí | — | — | không cần |
+| 12 | T4 28/10 | D13 chạy bổ sung; nộp test phi bền (nếu Chí quyết định ở C18); D15 OTI warm-start trên CIRR val (học máy, nếu còn GPU); D16 sinh bộ câu GPT quy mô nhỏ | C18; E7.1 của Hòa; C22, C23 | E7.2, E6.1 | T4/L4; A100 cho D16 |
+| 13 | T5 29/10 | D14 tổng hợp bảng, hình → bàn giao Chí; D17 train phi trên shard s0 với bộ câu mới | C22 | E6.4 | A100 (cho D17) |
 | 14 | T6 30/10 | Dự phòng: chạy lại khi cần; đối chiếu số trong báo cáo | — | — | tuỳ |
 
 ## 4. Chi tiết từng nhiệm vụ
@@ -246,8 +247,25 @@ $PY src/image_concepts_association.py --clip-model-name ViT-B/32 --dataset cirr 
 ```
 Bỏ qua nếu hết GPU; không ảnh hưởng các phần khác.
 
-### Việc thêm: sinh lại cụm từ GPT
-Phần này thuộc [06](06_sinh_lai_cum_tu_gpt.md). Ngày chạy, lệnh và người chạy theo bảng phân công trong file đó. Nếu trùng giờ GPU với các việc D…, ưu tiên việc D… (phần xử lý ảnh, phi bền) trừ khi Chí báo khác.
+### D16. Bộ câu GPT: thống kê và sinh bộ câu mới quy mô nhỏ (Ngày 12) — E6.1
+Cần: C22 (công cụ thống kê, làm sạch câu) và C23 (notebook sinh câu `colab/gen_phrases.ipynb`). Ý nghĩa các bộ câu P0–P3 và lệnh chi tiết ở [06](06_sinh_lai_cum_tu_gpt.md). 1–3 giờ A100.
+- E6.1: thống kê chất lượng cho bộ gốc P0 và bộ đã làm sạch P1 bằng `tools/phrases_stats.py`.
+- Sinh bộ câu mới (P2 hoặc P3, theo 06) bằng `colab/gen_phrases.ipynb` ở **chế độ quy mô nhỏ**: chỉ các khái niệm dùng cho ảnh shard s0, 64 câu mỗi khái niệm. Ghi lại thời gian sinh để ước lượng chi phí cho bộ đầy đủ.
+- Chạy E6.1 cho bộ mới; báo Hòa tên thư mục bộ câu để chạy H18.
+- Nếu trùng giờ GPU với D13, D15: ưu tiên D13 trừ khi Chí báo khác.
+
+### D17. Bộ câu GPT: train phi trên shard s0 với bộ câu mới (Ngày 13) — E6.4
+Cần: C22. Cấu hình giống T1 của Hòa (`phi_scale_s0`), chỉ đổi bộ câu; baseline chính là T1, không train lại. Mỗi lượt 2–3 giờ, có thể chạy song song 2 lượt trên A100. Thay `<bộ P1>`, `<bộ mới>` bằng tên thư mục bộ câu trong `data/GPT_phrases/`.
+```bash
+for P in <bộ P1> <bộ mới>; do
+  mkdir -p $DRIVE/results/E6.4-$P-s0
+  nohup $PY src/train_phi.py --exp-name E6.4-$P-s0 --clip-model-name ViT-B/32 \
+    --imagenet-dataset-path $DATA/ImageNet1K --cirr-dataset-path $DATA/CIRR \
+    --oti-exp-name oti_B32_s0 --train-on-oti-names --num-epochs 100 \
+    --validation-frequency 5 --save-training --gpt-exp-name $P > $DRIVE/results/E6.4-$P-s0/train.log 2>&1 &
+done
+```
+Đánh giá trên CIRR val và CIRCO val giống E1.14 (đổi `--exp-name`), so với T1 bằng bootstrap. Nếu không xong trong Ngày 13, báo Chí để ghi là kết quả sơ bộ.
 
 ## 5. Khi gặp lỗi
 

@@ -43,6 +43,8 @@ Chí cài đúng các tên dưới đây; Hòa và Doanh dùng đúng các tên 
 | `--output-dir` | Thư mục kết quả của lần chạy | đường dẫn | không ghi | C4 |
 | `--cache-dir` | Cache đặc trưng gallery, ảnh tham chiếu, thuộc tính | đường dẫn | không cache | C4 |
 | `--note` | Ghi chú cho dòng nhật ký tự động | chuỗi | rỗng | C4 |
+| `--clip-model-name` | Backbone CLIP của các baseline `image`, `text`, `sum`, `cbir` (phương pháp khác đọc từ experiment) | tên CLIP | `ViT-B/32` | C5 |
+| `--num-workers` | Số tiến trình đọc ảnh | số nguyên | 10 | C4 |
 | `--exclude-reference` | Loại ảnh tham chiếu khỏi kết quả (CIRR luôn loại theo giao thức) | cờ | tắt | C5 |
 | `--targetpad-ratio` | Tỉ lệ đệm ảnh của targetpad | số thực | 1.25 | C6 |
 | `--interp` | Phép nội suy khi đổi kích thước | `nearest`, `bilinear`, `bicubic`, `lanczos` | `bicubic` | C6 |
@@ -110,18 +112,29 @@ Chí cài đúng các tên dưới đây; Hòa và Doanh dùng đúng các tên 
 - Chỉ gọi là "cải thiện" khi khoảng tin cậy 95% của hiệu số không chứa 0.
 - Bootstrap chỉ đo nhiễu do chọn truy vấn, không đo nhiễu do seed khi train.
 
-## 1.5. Điểm test chính thức (Hòa: H3, H4, H13)
+## 1.5. Điểm test chính thức (Hòa: H4, H13)
 
-Đã có trong `outputs/submissions/`: file nộp của phi_B32 cho CIRR test1 (`metric = recall`, 4.148 truy vấn) và CIRCO test (800 truy vấn).
+Đã có đủ file nộp của phi_B32 trong `outputs/submissions/`: CIRR test1 gồm file chính (`metric = recall`) và file subset (`metric = recall_subset`), 4.148 truy vấn; CIRCO test 800 truy vấn.
 
-- Tìm hoặc sinh lại file subset CIRR (`metric = recall_subset`).
 - Sinh file nộp cho SEARLE gốc để có baseline trên test.
 - Nộp lên server CIRR (https://cirr.cecs.anu.edu.au/) và CIRCO (https://circo.micc.unifi.it/); gửi điểm cho Chí ghi vào [nhật ký](nhat_ky_thi_nghiem.md).
 - Từ đây, test chỉ dùng cho cấu hình cuối (H13).
 
 ## 1.6. Đối chiếu số liệu của paper (Chí: C7)
 
-Hằng số `PAPER_CIRR_VAL`, `PAPER_FIQ_VAL` ([app.py:51-57](../SEARLE-main/demo/app.py#L51-L57)) đang là cột "Paper" trong demo và trong [00](00_hien_trang_va_baseline.md), nhưng chưa được đối chiếu. Mở bài báo SEARLE (arXiv 2303.15247) và iSEARLE (arXiv 2405.02951), tìm bảng **val** của ViT-B/32; sửa nếu khác; ghi số bảng và trang. Không trộn số val và test trong cùng một bảng.
+Hằng số `PAPER_CIRR_VAL`, `PAPER_FIQ_VAL` ([app.py:50-59](../SEARLE-main/demo/app.py#L50-L59)) là cột "Paper" trong demo và trong [00](00_hien_trang_va_baseline.md). Không trộn số val và test trong cùng một bảng.
+
+**Đã đối chiếu (17/10, C7)** với arXiv 2303.15247v2 (bản HTML, không có số trang), SEARLE ViT-B/32. Mọi số trong demo khớp, không phải sửa:
+
+| Tập | Bảng | SEARLE |
+|---|---|---|
+| CIRR val | Table 9 (cũng là Table 4, 7, 12 cho R@1–R@50) | R@1 25.09, R@5 55.18, R@10 68.79, R@50 90.82, Rs@1/2/3 54.84 / 76.63 / 87.95 |
+| FashionIQ val | Table 1 | Shirt 24.44 / 41.61, Dress 18.54 / 39.51, Toptee 25.70 / 46.46, TB 22.89 / 42.53 (R@10 / R@50) |
+| CIRCO val | Table 10 | mAP@5/10/25/50 = 6.82 / 7.83 / 9.15 / 9.77 |
+| CIRR test | Table 2 | R@1 24.00, R@5 53.42, R@10 66.82, R@50 89.78, Rs@1/2/3 54.89 / 76.60 / 88.19 |
+| CIRCO test | Table 3 | mAP@5/10/25/50 = 9.35 / 9.94 / 11.13 / 11.84 |
+
+SEARLE gốc của nhóm trên CIRCO val (B4: mAP@5 6.82, mAP@10 7.78) gần như trùng Table 10, nên gallery CIRCO nhiều khả năng đã đủ ảnh; H2/H7 vẫn kiểm tra lại bằng công cụ. Chưa đối chiếu iSEARLE (arXiv 2405.02951): không cần cho bảng chính.
 
 ## 1.7. Chạy lại baseline bằng quy trình mới (Hòa: H5)
 
@@ -156,7 +169,7 @@ Mục đích: cho thấy CLIP hơn các đặc trưng thủ công bao nhiêu, v�
 | LBP | LBP đồng nhất (P = 8, R = 1) trên ảnh xám, histogram trên lưới 4 × 4 ô | Kết cấu |
 | HOG | ảnh xám 128 × 128, ô 16 × 16, 9 hướng | Gradient, đặc trưng hình dạng |
 | Gabor | 4 hướng × 3 tần số; trung bình và độ lệch chuẩn năng lượng đáp ứng | Lọc tuyến tính, kết cấu |
-| Kết hợp | nối các vector đã chuẩn hoá | — |
+| Kết hợp | trung bình điểm tương đồng của các đặc trưng (với cosine, tương đương nối các vector đã chuẩn hoá); histogram dùng `1 − chi²/2` | — |
 
 - `--eval-type cbir` chỉ dùng ảnh tham chiếu (bỏ qua câu mô tả). `--cbir-text-weight` > 0 cộng thêm điểm văn bản CLIP, tạo một baseline "cổ điển + hiện đại" đơn giản.
 - CBIR trên CIRCO cần tính đặc trưng cho khoảng 123 nghìn ảnh bằng CPU (1–2 giờ): chỉ chạy nếu còn thời gian.
@@ -246,3 +259,4 @@ Vẽ R@1, R@10 theo số ảnh (thang log). Chưa rõ 6.824 ảnh của lần ch
 ## Lịch sử thay đổi
 
 - 2026-10-16: tạo kế hoạch (gộp nội dung "Sửa nền đánh giá" và "Baseline, phân tích lỗi" của bản cũ).
+- 2026-10-17: C2–C8 xong; thêm `--clip-model-name`, `--num-workers` vào giao kèo; ghi kết quả đối chiếu số paper (1.6); ghi cách kết hợp đặc trưng CBIR (1.9).

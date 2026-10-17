@@ -91,6 +91,8 @@ def associate_image_concepts(args):
 
     # Extract the concepts for each image
     for batch in tqdm(loader):
+        if batch is None:  # every image of the batch failed to load
+            continue
         images = batch.get('image')
         names = batch.get('image_name')
         if images is None:

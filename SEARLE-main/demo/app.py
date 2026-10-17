@@ -47,7 +47,9 @@ UPLOAD_DIR = DEMO_DIR / "gallery"
 CACHE_FILE = DEMO_DIR / "cache" / "gallery.pt"
 IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"}
 
-# Kết quả gốc của paper (SEARLE, ViT-B/32) - arXiv 2303.15247, Table 9 (CIRR val), Table 1 (FashionIQ val)
+# Kết quả gốc của paper (SEARLE, ViT-B/32) - arXiv 2303.15247v2, Table 9 (CIRR val), Table 1 (FashionIQ val).
+# Đã đối chiếu từng số với arXiv v2 ngày 17/10/2026 (việc C7). Cùng bài: CIRCO val ở Table 10
+# (mAP@5/10/25/50 = 6.82 / 7.83 / 9.15 / 9.77); CIRR test ở Table 2 (R@1 24.00) - không trộn với số val.
 PAPER_CIRR_VAL = {
     "cirr_recall_at1": 25.09, "cirr_recall_at5": 55.18, "cirr_recall_at10": 68.79, "cirr_recall_at50": 90.82,
     "cirr_group_recall_at1": 54.84, "cirr_group_recall_at2": 76.63, "cirr_group_recall_at3": 87.95,

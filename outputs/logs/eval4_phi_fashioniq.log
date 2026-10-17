@@ -1,0 +1,6 @@
+usage: validate.py [-h] [--exp-name EXP_NAME] --eval-type
+                   {oti,phi,searle,searle-xl} --dataset {cirr,fashioniq,circo}
+                   --dataset-path DATASET_PATH
+                   [--preprocess-type {clip,targetpad}]
+                   [--phi-checkpoint-name PHI_CHECKPOINT_NAME]
+validate.py: error: argument --dataset-path: expected one argument

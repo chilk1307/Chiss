@@ -51,18 +51,65 @@ class TargetPad:
         return FT.pad(image, padding, 0, 'constant')
 
 
-def targetpad_transform(target_ratio: float, dim: int) -> torch.Tensor:
+INTERPOLATIONS = {
+    'nearest': InterpolationMode.NEAREST,
+    'bilinear': InterpolationMode.BILINEAR,
+    'bicubic': InterpolationMode.BICUBIC,
+    'lanczos': InterpolationMode.LANCZOS,
+}
+
+
+def targetpad_transform(target_ratio: float, dim: int, interpolation: str = 'bicubic') -> torch.Tensor:
     """
     CLIP-like preprocessing transform computed after using TargetPad pad
     :param target_ratio: target ratio for TargetPad
     :param dim: image output dimension
+    :param interpolation: resize interpolation, one of INTERPOLATIONS
     :return: CLIP-like torchvision Compose transform
     """
     return Compose([
         TargetPad(target_ratio, dim),
-        Resize(dim, interpolation=InterpolationMode.BICUBIC),
+        Resize(dim, interpolation=INTERPOLATIONS[interpolation]),
         CenterCrop(dim),
         _convert_image_to_rgb,
         ToTensor(),
         Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
     ])
+
+
+def clip_transform(dim: int, interpolation: str = 'bicubic') -> torch.Tensor:
+    """
+    Same pipeline as clip.load()'s preprocess (resize, center crop, no padding) with a configurable interpolation
+    """
+    return Compose([
+        Resize(dim, interpolation=INTERPOLATIONS[interpolation]),
+        CenterCrop(dim),
+        _convert_image_to_rgb,
+        ToTensor(),
+        Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+    ])
+
+
+def build_preprocess(preprocess_type: str, dim: int, clip_preprocess: callable = None, targetpad_ratio: float = 1.25,
+                     interpolation: str = 'bicubic') -> callable:
+    """
+    Image preprocessing used for evaluation. The defaults (targetpad, 1.25, bicubic) are the original SEARLE pipeline.
+    """
+    if preprocess_type == 'targetpad':
+        print(f'Target pad preprocess pipeline is used (ratio {targetpad_ratio}, {interpolation})')
+        return targetpad_transform(targetpad_ratio, dim, interpolation)
+    elif preprocess_type == 'clip':
+        print(f'CLIP preprocess pipeline is used ({interpolation})')
+        if interpolation == 'bicubic' and clip_preprocess is not None:
+            return clip_preprocess
+        return clip_transform(dim, interpolation)
+    raise ValueError("Preprocess type not supported")
+
+
+def preprocess_key(preprocess_type: str, targetpad_ratio: float = 1.25, interpolation: str = 'bicubic') -> str:
+    """
+    Short string identifying a preprocessing configuration, used in feature cache keys
+    """
+    if preprocess_type == 'targetpad':
+        return f"targetpad{targetpad_ratio:g}-{interpolation}"
+    return f"{preprocess_type}-{interpolation}"

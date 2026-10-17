@@ -21,9 +21,9 @@
 | 6 | T5 22/10 | C12, kiểm thử E2.1 | Hòa H9 |
 | 7 | T6 23/10 | C13; họp mốc M3 | Hòa H10 |
 | 8 | T7 24/10 | C14, C15 | Doanh D10; Hòa H11 |
-| 9 | CN 25/10 | C16; C21 (học máy) | Hòa H12, H15; Doanh D11–D12 |
+| 9 | CN 25/10 | C16; C21 (học máy); C22 (bộ câu GPT) | Hòa H12, H15, H18; Doanh D11–D12, D16–D17 |
 | 10 | T2 26/10 | C17 demo | — |
-| 11 | T3 27/10 | C17 (tiếp), C18 chọn cấu hình cuối | Hòa H13, Doanh D13 |
+| 11 | T3 27/10 | C17 (tiếp), C18 chọn cấu hình cuối; C23 notebook sinh câu (sau mốc M4) | Hòa H13; Doanh D13, D16 |
 | 12 | T4 28/10 | C19 README, CHANGES.md, báo cáo | — |
 | 13 | T5 29/10 | C19 báo cáo, slide | Nhận bàn giao H14, D14 |
 | 14 | T6 30/10 | C20 video, kiểm tra cuối, nộp bài | — |
@@ -110,8 +110,11 @@ Theo [05](05_demo_va_bao_cao.md) mục 5.8–5.9.
 ### C21. Luồng học máy: code OTI warm-start (Ngày 9)
 Theo [07](07_hoc_may_oti_warm_start.md) mục 7.1–7.2: khởi tạo token từ phi (`--init`, `--init-phi-exp-name`, `--init-phi-checkpoint`), lưu token theo từng bước (`--snapshot-steps`) trong `oti_inversion.py`; chọn file token khi đánh giá (`--token-file`) trong module chung. Hòa chạy E7.0–E7.1 ngay Ngày 11 (H15), Doanh chạy E7.2 Ngày 12 (D15). Nếu trễ thì dời sang sau mốc M4; luồng xử lý ảnh luôn được ưu tiên trước.
 
-### C22. Sinh lại cụm từ GPT
-Theo [06](06_sinh_lai_cum_tu_gpt.md): code và lịch theo bảng phân công trong file đó. Khi xếp lịch, không lấy giờ của các việc C1–C20 đang làm Hòa, Doanh phải chờ.
+### C22. Bộ câu GPT: công cụ và cờ mới (Ngày 9)
+Theo [06](06_sinh_lai_cum_tu_gpt.md): `tools/phrases_stats.py`, `tools/clean_phrases.py` (tạo bộ P1 đã làm sạch); cờ `--phrase-match`, `--concept-filter` cho OTI và train phi; sửa lỗi `saved_exp_name` trong `gpt_phrases_generation.py` (khi chạy tiếp, code đọc `args.saved_exp_name` nhưng không khai báo tham số này). Cần cho Hòa H18 và Doanh D16–D17.
+
+### C23. Bộ câu GPT: notebook sinh câu (Ngày 11, sau mốc M4)
+Theo [06](06_sinh_lai_cum_tu_gpt.md): `colab/gen_phrases.ipynb` chạy trên runtime riêng, có chế độ quy mô nhỏ (chỉ khái niệm dùng cho ảnh shard s0, 64 câu mỗi khái niệm). Chạy thử ngắn trước khi giao cho Doanh (D16).
 
 ## Quyết định Chí phụ trách
 

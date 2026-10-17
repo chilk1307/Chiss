@@ -1,12 +1,74 @@
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import json
+import sys
+import time
 from pathlib import Path
 from typing import List, Optional, Union, Dict, Literal
 
 import PIL
 import PIL.Image
 from torch.utils.data import Dataset
+
+# Images that fail to load are skipped (the sample becomes None and collate_fn drops it), but never silently:
+# each failure is printed with the file name and the error. Callers compare the number of loaded samples with
+# len(dataset) to report the total (see retrieval_core.encode_images).
+MAX_PRINTED_LOAD_ERRORS = 20  # per process; DataLoader workers each have their own counter
+_load_errors = 0
+
+
+def warn_load_error(what: str, error: Exception) -> None:
+    global _load_errors
+    _load_errors += 1
+    if _load_errors <= MAX_PRINTED_LOAD_ERRORS:
+        print(f"[datasets] WARNING: cannot load {what}: {type(error).__name__}: {error}", file=sys.stderr, flush=True)
+    if _load_errors == MAX_PRINTED_LOAD_ERRORS:
+        print(f"[datasets] further load errors in this process are not printed", file=sys.stderr, flush=True)
+
+
+def open_image(path: Union[Path, str], attempts: int = 3) -> PIL.Image.Image:
+    """
+    Open and decode an image. Transient read errors (common when reading from Google Drive) are retried;
+    a missing file is not.
+    """
+    for attempt in range(attempts):
+        try:
+            image = PIL.Image.open(path)
+            image.load()
+            return image
+        except FileNotFoundError:
+            raise
+        except OSError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(1)
+
+
+class ImageListDataset(Dataset):
+    """
+    Dataset over an explicit list of images, used e.g. to encode the unique reference images of a split.
+    Yields a dict with keys ['image', 'image_name'].
+    """
+
+    def __init__(self, names: List[str], paths: List[Union[Path, str]], preprocess: callable, split: str = ''):
+        assert len(names) == len(paths)
+        self.names = names
+        self.paths = paths
+        self.preprocess = preprocess
+        self.split = split
+
+    def __getitem__(self, index) -> Optional[dict]:
+        try:
+            return {
+                'image': self.preprocess(open_image(self.paths[index])),
+                'image_name': self.names[index]
+            }
+        except Exception as e:
+            warn_load_error(str(self.paths[index]), e)
+            return None
+
+    def __len__(self):
+        return len(self.names)
 
 
 class FashionIQDataset(Dataset):
@@ -18,6 +80,8 @@ class FashionIQDataset(Dataset):
             - ['reference_image', 'reference_name', 'target_image', 'target_name', 'relative_captions'] when
              split in ['train', 'val']
             - ['reference_image', 'reference_name', 'relative_captions'] when split == test
+    About 2,431 FashionIQ images are dead links: triplets and gallery images whose files are missing are filtered
+    out at construction time and the counts are printed.
     """
 
     def __init__(self, dataset_path: Union[Path, str], split: Literal['train', 'val', 'test'], dress_types: List[str],
@@ -53,20 +117,20 @@ class FashionIQDataset(Dataset):
 
         self.preprocess = preprocess
 
-        # get triplets made by (reference_image, target_image, a pair of relative captions)
+        # get triplets made by (reference_image, target_image, a pair of relative captions), keeping only the
+        # triplets whose images exist on disk
         self.triplets: List[dict] = []
+        n_declared_triplets = 0
         for dress_type in dress_types:
             with open(dataset_path / 'captions' / f'cap.{dress_type}.{split}.json') as f:
                 raw_triplets = json.load(f)
-            # Lọc chỉ giữ các mẫu có ảnh tồn tại
-            valid = []
+            n_declared_triplets += len(raw_triplets)
             for t in raw_triplets:
-                ref_ok = (dataset_path / 'images' / f"{t['candidate']}.jpg").exists()
-                tgt_ok = (dataset_path / 'images' / f"{t['target']}.jpg").exists() if split in ['train', 'val'] else True
+                ref_ok = self.image_path(t['candidate']).exists()
+                tgt_ok = self.image_path(t['target']).exists() if split in ['train', 'val'] else True
                 if ref_ok and tgt_ok:
-                    valid.append(t)
-            self.triplets.extend(valid)
-        print(f"-> Đã lọc còn {len(self.triplets)} mẫu có đầy đủ ảnh trên đĩa")
+                    self.triplets.append(t)
+        n_valid_triplets = len(self.triplets)
 
         # Remove duplicats from
         if self.no_duplicates:
@@ -78,26 +142,31 @@ class FashionIQDataset(Dataset):
                     new_triplets.append(triplet)
             self.triplets = new_triplets
 
-        # get the image names
+        # get the image names, keeping only the images that exist on disk
         self.image_names: list = []
         for dress_type in dress_types:
             with open(dataset_path / 'image_splits' / f'split.{dress_type}.{split}.json') as f:
                 self.image_names.extend(json.load(f))
+        n_declared_images = len(self.image_names)
+        self.image_names = [n for n in self.image_names if self.image_path(n).exists()]
 
+        print(f"FashionIQ {split} - {dress_types}: kept {n_valid_triplets}/{n_declared_triplets} triplets "
+              f"and {len(self.image_names)}/{n_declared_images} gallery images with files on disk")
         print(f"FashionIQ {split} - {dress_types} dataset in {mode} mode initialized")
 
-    def __getitem__(self, index) -> dict:
+    def image_path(self, image_name: str) -> Path:
+        return self.dataset_path / 'images' / f"{image_name}.jpg"
+
+    def __getitem__(self, index) -> Optional[dict]:
         try:
             if self.mode == 'relative':
                 relative_captions = self.triplets[index]['captions']
                 reference_name = self.triplets[index]['candidate']
 
                 if self.split in ['train', 'val']:
-                    reference_image_path = self.dataset_path / 'images' / f"{reference_name}.jpg"
-                    reference_image = self.preprocess(PIL.Image.open(reference_image_path))
+                    reference_image = self.preprocess(open_image(self.image_path(reference_name)))
                     target_name = self.triplets[index]['target']
-                    target_image_path = self.dataset_path / 'images' / f"{target_name}.jpg"
-                    target_image = self.preprocess(PIL.Image.open(target_image_path))
+                    target_image = self.preprocess(open_image(self.image_path(target_name)))
 
                     return {
                         'reference_image': reference_image,
@@ -108,8 +177,7 @@ class FashionIQDataset(Dataset):
                     }
 
                 elif self.split == 'test':
-                    reference_image_path = self.dataset_path / 'images' / f"{reference_name}.jpg"
-                    reference_image = self.preprocess(PIL.Image.open(reference_image_path))
+                    reference_image = self.preprocess(open_image(self.image_path(reference_name)))
 
                     return {
                         'reference_image': reference_image,
@@ -119,8 +187,7 @@ class FashionIQDataset(Dataset):
 
             elif self.mode == 'classic':
                 image_name = self.image_names[index]
-                image_path = self.dataset_path / 'images' / f"{image_name}.jpg"
-                image = self.preprocess(PIL.Image.open(image_path))
+                image = self.preprocess(open_image(self.image_path(image_name)))
 
                 return {
                     'image': image,
@@ -130,7 +197,8 @@ class FashionIQDataset(Dataset):
             else:
                 raise ValueError("mode should be in ['relative', 'classic']")
         except Exception as e:
-            pass
+            warn_load_error(f"FashionIQ {self.split} {self.mode} sample {index}", e)
+            return None
 
     def __len__(self):
         if self.mode == 'relative':
@@ -200,10 +268,14 @@ class CIRRDataset(Dataset):
         # get a mapping from image name to relative path
         with open(dataset_path / 'cirr' / 'image_splits' / f'split.rc2.{split}.json') as f:
             self.name_to_relpath = json.load(f)
+        self.image_names = list(self.name_to_relpath.keys())
 
         print(f"CIRR {split} dataset in {mode} mode initialized")
 
-    def __getitem__(self, index) -> dict:
+    def image_path(self, image_name: str) -> Path:
+        return self.dataset_path / self.name_to_relpath[image_name]
+
+    def __getitem__(self, index) -> Optional[dict]:
         try:
             if self.mode == 'relative':
                 group_members = self.triplets[index]['img_set']['members']
@@ -211,11 +283,9 @@ class CIRRDataset(Dataset):
                 relative_caption = self.triplets[index]['caption']
 
                 if self.split in ['train', 'val']:
-                    reference_image_path = self.dataset_path / self.name_to_relpath[reference_name]
-                    reference_image = self.preprocess(PIL.Image.open(reference_image_path))
+                    reference_image = self.preprocess(open_image(self.image_path(reference_name)))
                     target_hard_name = self.triplets[index]['target_hard']
-                    target_image_path = self.dataset_path / self.name_to_relpath[target_hard_name]
-                    target_image = self.preprocess(PIL.Image.open(target_image_path))
+                    target_image = self.preprocess(open_image(self.image_path(target_hard_name)))
 
                     return {
                         'reference_image': reference_image,
@@ -228,8 +298,7 @@ class CIRRDataset(Dataset):
 
                 elif self.split == 'test1':
                     pair_id = self.triplets[index]['pairid']
-                    reference_image_path = self.dataset_path / self.name_to_relpath[reference_name]
-                    reference_image = self.preprocess(PIL.Image.open(reference_image_path))
+                    reference_image = self.preprocess(open_image(self.image_path(reference_name)))
                     return {
                         'reference_image': reference_image,
                         'reference_name': reference_name,
@@ -239,10 +308,8 @@ class CIRRDataset(Dataset):
                     }
 
             elif self.mode == 'classic':
-                image_name = list(self.name_to_relpath.keys())[index]
-                image_path = self.dataset_path / self.name_to_relpath[image_name]
-                im = PIL.Image.open(image_path)
-                image = self.preprocess(im)
+                image_name = self.image_names[index]
+                image = self.preprocess(open_image(self.image_path(image_name)))
 
                 return {
                     'image': image,
@@ -253,7 +320,8 @@ class CIRRDataset(Dataset):
                 raise ValueError("mode should be in ['relative', 'classic']")
 
         except Exception as e:
-            pass
+            warn_load_error(f"CIRR {self.split} {self.mode} sample {index}", e)
+            return None
 
     def __len__(self):
         if self.mode == 'relative':
@@ -316,6 +384,9 @@ class CIRCODataset(Dataset):
 
         print(f"CIRCODataset {split} dataset in {mode} mode initialized")
 
+    def image_path(self, img_id: str) -> Path:
+        return self.img_paths[self.img_ids_indexes_map[str(img_id)]]
+
     def get_target_img_ids(self, index) -> Dict[str, int]:
         """
         Returns the id of the target image and ground truth images for a given query
@@ -332,7 +403,7 @@ class CIRCODataset(Dataset):
             'gt_img_ids': self.annotations[index]['gt_img_ids']
         }
 
-    def __getitem__(self, index) -> dict:
+    def __getitem__(self, index) -> Optional[dict]:
         """
         Returns a specific item from the dataset based on the index.
 
@@ -343,61 +414,62 @@ class CIRCODataset(Dataset):
             if split == val
             - [reference_img, reference_img_id, relative_caption, shared_concept, query_id]  if split == test
         """
+        try:
+            if self.mode == 'relative':
+                # Get the query id
+                query_id = str(self.annotations[index]['id'])
 
-        if self.mode == 'relative':
-            # Get the query id
-            query_id = str(self.annotations[index]['id'])
+                # Get relative caption and shared concept
+                relative_caption = self.annotations[index]['relative_caption']
+                shared_concept = self.annotations[index]['shared_concept']
 
-            # Get relative caption and shared concept
-            relative_caption = self.annotations[index]['relative_caption']
-            shared_concept = self.annotations[index]['shared_concept']
+                # Get the reference image
+                reference_img_id = str(self.annotations[index]['reference_img_id'])
+                reference_img = self.preprocess(open_image(self.image_path(reference_img_id)))
 
-            # Get the reference image
-            reference_img_id = str(self.annotations[index]['reference_img_id'])
-            reference_img_path = self.img_paths[self.img_ids_indexes_map[reference_img_id]]
-            reference_img = self.preprocess(PIL.Image.open(reference_img_path))
+                if self.split == 'val':
+                    # Get the target image and ground truth images
+                    target_img_id = str(self.annotations[index]['target_img_id'])
+                    gt_img_ids = [str(x) for x in self.annotations[index]['gt_img_ids']]
+                    target_img = self.preprocess(open_image(self.image_path(target_img_id)))
 
-            if self.split == 'val':
-                # Get the target image and ground truth images
-                target_img_id = str(self.annotations[index]['target_img_id'])
-                gt_img_ids = [str(x) for x in self.annotations[index]['gt_img_ids']]
-                target_img_path = self.img_paths[self.img_ids_indexes_map[target_img_id]]
-                target_img = self.preprocess(PIL.Image.open(target_img_path))
+                    # Pad ground truth image IDs with zeros for collate_fn
+                    gt_img_ids += [''] * (self.max_num_gts - len(gt_img_ids))
 
-                # Pad ground truth image IDs with zeros for collate_fn
-                gt_img_ids += [''] * (self.max_num_gts - len(gt_img_ids))
+                    return {
+                        'reference_image': reference_img,
+                        'reference_name': reference_img_id,
+                        'target_image': target_img,
+                        'target_name': target_img_id,
+                        'relative_caption': relative_caption,
+                        'shared_concept': shared_concept,
+                        'gt_img_ids': gt_img_ids,
+                        'query_id': query_id,
+                    }
 
+                elif self.split == 'test':
+                    return {
+                        'reference_image': reference_img,
+                        'reference_name': reference_img_id,
+                        'relative_caption': relative_caption,
+                        'shared_concept': shared_concept,
+                        'query_id': query_id,
+                    }
+
+            elif self.mode == 'classic':
+                # Get image ID and image path
+                img_id = str(self.img_ids[index])
+                img_path = self.img_paths[index]
+
+                # Preprocess image and return
+                img = self.preprocess(open_image(img_path))
                 return {
-                    'reference_image': reference_img,
-                    'reference_name': reference_img_id,
-                    'target_image': target_img,
-                    'target_name': target_img_id,
-                    'relative_caption': relative_caption,
-                    'shared_concept': shared_concept,
-                    'gt_img_ids': gt_img_ids,
-                    'query_id': query_id,
+                    'image': img,
+                    'image_name': img_id
                 }
-
-            elif self.split == 'test':
-                return {
-                    'reference_image': reference_img,
-                    'reference_name': reference_img_id,
-                    'relative_caption': relative_caption,
-                    'shared_concept': shared_concept,
-                    'query_id': query_id,
-                }
-
-        elif self.mode == 'classic':
-            # Get image ID and image path
-            img_id = str(self.img_ids[index])
-            img_path = self.img_paths[index]
-
-            # Preprocess image and return
-            img = self.preprocess(PIL.Image.open(img_path))
-            return {
-                'image': img,
-                'image_name': img_id
-            }
+        except Exception as e:
+            warn_load_error(f"CIRCO {self.split} {self.mode} sample {index}", e)
+            return None
 
     def __len__(self):
         """
@@ -430,7 +502,7 @@ class ImageNetDataset(Dataset):
 
     def __getitem__(self, index) -> dict:
         img_path = self.images_path[index]
-        img = self.preprocess(PIL.Image.open(img_path))
+        img = self.preprocess(open_image(img_path))
         return {
             'image': img,
             'image_name': img_path.name

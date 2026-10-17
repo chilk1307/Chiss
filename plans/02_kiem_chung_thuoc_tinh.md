@@ -18,10 +18,12 @@
 
 ## Giả thuyết
 
-- **H1:** với truy vấn có thuộc tính đo được, xếp hạng lại cải thiện R@K (CIRR, FIQ) và mAP@K (CIRCO) so với SEARLE; truy vấn không có thuộc tính giữ nguyên kết quả.
-- **H2:** thuộc tính tương đối ("tối hơn", "rực hơn") được lợi nhiều hơn thuộc tính tuyệt đối ("màu đỏ"), vì CLIP yếu hơn ở phép so sánh.
-- **H3:** tách đối tượng khỏi nền trước khi đo làm bộ đo chính xác hơn, nhất là với ảnh cảnh (CIRR, CIRCO).
-- **H4:** xử lý phủ định tường minh ("no stripes", "not red") cải thiện rõ trên nhóm truy vấn phủ định.
+Đặt tên GT1–GT4 (giả thuyết) để không nhầm với mã việc H… của Hòa.
+
+- **GT1:** với truy vấn có thuộc tính đo được, xếp hạng lại cải thiện R@K (CIRR, FIQ) và mAP@K (CIRCO) so với SEARLE; truy vấn không có thuộc tính giữ nguyên kết quả.
+- **GT2:** thuộc tính tương đối ("tối hơn", "rực hơn") được lợi nhiều hơn thuộc tính tuyệt đối ("màu đỏ"), vì CLIP yếu hơn ở phép so sánh.
+- **GT3:** tách đối tượng khỏi nền trước khi đo làm bộ đo chính xác hơn, nhất là với ảnh cảnh (CIRR, CIRCO).
+- **GT4:** xử lý phủ định tường minh ("no stripes", "not red") cải thiện rõ trên nhóm truy vấn phủ định.
 
 ## Sơ đồ
 
@@ -91,9 +93,9 @@ File mới `src/attributes/meters.py`, dùng OpenCV và scikit-image; ảnh thu 
 | E2.0 | Tỉ lệ truy vấn có từng loại thuộc tính trong CIRR val, FIQ val, CIRCO val | Quyết định đi tiếp hay không | Hòa | 7 |
 | E2.1 | Kiểm thử bộ đo trên ảnh tổng hợp | Bộ đo đo đúng thứ cần đo | Chí | 6 |
 | E2.2 | Độ đồng thuận bộ đo – câu mô tả trên cặp (tham chiếu, đích) thật. Ví dụ: với truy vấn "darker", bao nhiêu phần trăm cặp có L*(đích) < L*(tham chiếu)? | Bộ đo khớp cách người viết mô tả | Hòa | 7 |
-| E2.3 | Xếp hạng lại với từng họ thuộc tính riêng; quét w = 0.05, 0.1, 0.2, 0.3 và K = 50, 100 | H1, H2 | Hòa | 8–9 |
-| E2.4 | Mặt nạ: không tách / Otsu / GrabCut / spectral residual | H3 | Hòa | 9 |
-| E2.5 | Có và không xử lý phủ định | H4 | Hòa | 9 |
+| E2.3 | Xếp hạng lại với từng họ thuộc tính riêng; quét w = 0.05, 0.1, 0.2, 0.3 và K = 50, 100 | GT1, GT2 | Hòa | 8–9 |
+| E2.4 | Mặt nạ: không tách / Otsu / GrabCut / spectral residual | GT3 | Hòa | 9 |
+| E2.5 | Có và không xử lý phủ định | GT4 | Hòa | 9 |
 | E2.6 | Kết hợp mọi họ thuộc tính; kết hợp thêm với [04](04_tien_xu_ly_va_truy_van.md) | Cấu hình cuối | Hòa | 10 |
 | E2.7 | Cấu hình cuối trên CIRCO val và FIQ val, **không chỉnh lại tham số** | Tổng quát hoá | Hòa | 10 |
 | E2.8 | 10–20 ví dụ kèm lời giải thích | Báo cáo, demo | Hòa | 11 |
@@ -112,7 +114,7 @@ File mới `src/attributes/meters.py`, dùng OpenCV và scikit-image; ảnh thu 
 ## Tiêu chí hoàn thành
 
 - [ ] Parser và bộ đo có kiểm thử (E2.1, độ chính xác của parser).
-- [ ] Trả lời H1–H4 bằng số liệu có khoảng tin cậy.
+- [ ] Trả lời GT1–GT4 bằng số liệu có khoảng tin cậy.
 - [ ] Cấu hình cuối có số trên 3 tập val và trên test.
 - [ ] Tắt `--attr-rerank` thì kết quả trùng baseline.
 
