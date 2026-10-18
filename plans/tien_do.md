@@ -1,6 +1,6 @@
 # Tiến độ dự án
 
-**Cập nhật:** 18/10/2026 (Ngày 2): Chí làm xong toàn bộ phần code mà các lượt chạy Colab cần (C3, C5–C16, C21–C23). Việc còn lại của Chí: C1 (làm tay), nghiệm thu C2, C4 trên Colab, C17–C20.
+**Cập nhật:** 19/10/2026 (Ngày 3): Chí làm xong toàn bộ phần code mà các lượt chạy Colab cần (C3, C5–C16, C21–C24; C24 là việc mới: phân tích vector ảnh và vector từ). Việc còn lại của Chí: C1 (làm tay), nghiệm thu C2, C4 trên Colab, C17–C20.
 **Cách dùng:** làm xong việc nào thì đổi `- [ ]` thành `- [x]`, ghi ngày xong ở cuối dòng, rồi cập nhật bảng tóm tắt bên dưới. Việc làm được một phần thì giữ `- [ ]` và ghi "(một phần: …)".
 
 ## Tóm tắt
@@ -8,10 +8,10 @@
 | Phần | Xong | Tổng | Tiến độ | Ghi chú |
 |---|---|---|---|---|
 | **Giai đoạn 0: tái lập SEARLE** (trước kế hoạch) | 13 | 15 | **87%** | Còn thiếu: điểm test từ server; FashionIQ chỉ có tập con |
-| Kế hoạch 2 tuần: Chí (C1–C23) | 16 | 23 | 70% | Xong toàn bộ code cần cho Colab (C3, C5–C16, C21–C23); C2, C4 chờ nghiệm thu trên Colab; C1 cần làm tay; còn C17–C20 (demo, cấu hình cuối, báo cáo, video) |
+| Kế hoạch 2 tuần: Chí (C1–C24) | 17 | 24 | 71% | Xong toàn bộ code cần cho Colab (C3, C5–C16, C21–C24); C2, C4 chờ nghiệm thu trên Colab; C1 cần làm tay; còn C17–C20 (demo, cấu hình cuối, báo cáo, video) |
 | Kế hoạch 2 tuần: Hòa (H1–H18, T1–T2) | 1 | 20 | 5% | H3 xong (file subset CIRR đã có) |
 | Kế hoạch 2 tuần: Doanh (D1–D17) | 0 | 17 | 0% | |
-| **Kế hoạch 2 tuần: cả nhóm** | 17 | 60 | **28%** | Mọi lệnh Colab của Hòa, Doanh đã có code để chạy |
+| **Kế hoạch 2 tuần: cả nhóm** | 18 | 61 | **30%** | Mọi lệnh Colab của Hòa, Doanh đã có code để chạy |
 | Mốc kiểm tra M1–M5 | 0 | 5 | 0% | M1 hạn 18/10 |
 
 Trang tự đánh giá của demo (`/api/assessment`, chỉ tính phần tái lập): lõi **93%**, tính cả phần mở rộng (SEARLE-XL, SEARLE-OTI) **75%**.
@@ -66,6 +66,7 @@ Chi tiết: [nhiem_vu_Chi.md](nhiem_vu_Chi.md).
 - [x] **C21** (Ngày 9) Code OTI warm-start (`--init`, `--snapshot-steps`, `--token-file`) (`--init random` trùng từng bit code gốc; thêm `timing.json`, `--gpt-exp-name none`, nội suy token khi đánh giá) — 18/10
 - [x] **C22** (Ngày 9) Công cụ bộ câu GPT: thống kê, làm sạch (P1), `--phrase-match`, `--concept-filter`, sửa lỗi `saved_exp_name` (đọc/ghi file câu dạng luồng, không cần nạp cả 700 MB) — 18/10
 - [x] **C23** (Ngày 11) Notebook sinh câu `colab/gen_phrases.ipynb`, chế độ quy mô nhỏ (`tools/generate_phrases_llm.py` chế độ P2 và P3; chạy thử với mô hình nhỏ trên CPU; chạy thật trên Colab ở D16) — 18/10
+- [x] **C24** (thêm) Phân tích vector ảnh và vector từ: `tools/vector_analysis.py` `tokens`, `gap`, `drift` (thử trên CIRR, CIRCO, FIQ giả lập; `drift` cho đúng số của lượt `validate.py` cùng cấu hình) — 19/10
 
 ## Kế hoạch 2 tuần: Hòa (Colab)
 
@@ -78,7 +79,7 @@ Chi tiết: [nhiem_vu_Hoa.md](nhiem_vu_Hoa.md).
 - [ ] **H5** (Ngày 3) Kiểm tra không hồi quy; chạy lại baseline E1.7a–f
 - [ ] **H6** (Ngày 4) Baseline CLIP (E1.8) và CBIR cổ điển (E1.9)
 - [ ] **H7** (Ngày 5) Kiểm tra dữ liệu bằng công cụ; khoảng tin cậy (E1.4); gom kết quả
-- [ ] **H8** (Ngày 6) Phân loại truy vấn (E1.10); phân tích giữ – sửa (E1.11)
+- [ ] **H8** (Ngày 6) Phân loại truy vấn (E1.10); phân tích giữ – sửa (E1.11); vector ảnh – vector từ (E1.15a–b)
 - [ ] **H9** (Ngày 7) Thống kê thuộc tính (E2.0); đồng thuận bộ đo (E2.2) → mốc M3
 - [ ] **H10** (Ngày 8–9) Quét xếp hạng lại (E2.3); mặt nạ (E2.4); phủ định (E2.5)
 - [ ] **H11** (Ngày 10) Kết hợp (E2.6), tổng quát hoá (E2.7), kết hợp điểm (E4.4), ensemble prompt (E4.5)
@@ -106,7 +107,7 @@ Chi tiết: [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md).
 - [ ] **D8** (Ngày 7) Phục hồi cố định (E3.2); sàng lọc tiếp; nhóm left/right (E4.3b)
 - [ ] **D9** (Ngày 8) Đánh giá 3 bản sàng lọc, chọn biến thể; đặc trưng ảnh xấu 100k
 - [ ] **D10** (Ngày 9) Train phi bền bản đầy đủ (E3.8b); phục hồi tự động (E3.3)
-- [ ] **D11** (Ngày 10) PSNR/SSIM so với điểm truy xuất (E3.4); đánh giá phi bền (E3.8c)
+- [ ] **D11** (Ngày 10) PSNR/SSIM so với điểm truy xuất (E3.4); đánh giá phi bền (E3.8c); độ trôi vector (E3.9)
 - [ ] **D12** (Ngày 11) Độ bền bộ đo thuộc tính (E3.6); hình minh hoạ (E3.7)
 - [ ] **D13** (Ngày 12) Chạy bổ sung; nộp test phi bền (nếu được chọn)
 - [ ] **D14** (Ngày 13) Tổng hợp bảng, hình → bàn giao Chí

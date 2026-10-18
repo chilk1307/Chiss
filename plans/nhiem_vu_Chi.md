@@ -9,7 +9,7 @@
 4. Xong việc nào thì đẩy lên GitHub và nhắn nhóm: "Xong C…, Hòa chạy được H…, Doanh chạy được D…".
 5. Ưu tiên việc đang làm người khác phải chờ (cột "Ai đang chờ").
 
-## Tình trạng (cập nhật 18/10)
+## Tình trạng (cập nhật 19/10)
 
 Phần code cho các lượt chạy Colab đã xong sớm hơn lịch, đã có trên GitHub. Chi tiết từng file ở [CHANGES.md](../SEARLE-main/CHANGES.md), tiến độ ở [tien_do.md](tien_do.md).
 
@@ -23,6 +23,7 @@ Phần code cho các lượt chạy Colab đã xong sớm hơn lịch, đã có 
 | C14 | Xong; ngưỡng của `--restore auto` mới là bản tạm (17 ảnh mẫu), **phải hiệu chỉnh lại** (xem dưới) |
 | C19 | Một phần: `CHANGES.md` đã có; README gốc repo, báo cáo, slide chưa |
 | C21–C23 | Xong |
+| C24 | Xong (19/10): `tools/vector_analysis.py`, thử trên dữ liệu giả lập; Hòa chạy E1.15 ở H8, H15, Doanh chạy E3.9 ở D11 |
 | C17, C18, C20 | Chưa; C17 làm được ngay, C18 chờ kết quả của Hòa và Doanh |
 
 **Việc Chí còn phải làm, theo thứ tự:**
@@ -142,6 +143,9 @@ Theo [06](06_sinh_lai_cum_tu_gpt.md): `tools/phrases_stats.py`, `tools/clean_phr
 
 ### C23. Bộ câu GPT: notebook sinh câu (Ngày 11, sau mốc M4)
 Theo [06](06_sinh_lai_cum_tu_gpt.md): `colab/gen_phrases.ipynb` chạy trên runtime riêng, có chế độ quy mô nhỏ (chỉ khái niệm dùng cho ảnh shard s0, 64 câu mỗi khái niệm). Chạy thử ngắn trước khi giao cho Doanh (D16).
+
+### C24. Phân tích vector ảnh và vector từ (thêm 19/10)
+`tools/vector_analysis.py` với 3 lệnh: `tokens` (E1.15a: pseudo-token so với vector từ CLIP, có `--snap-eval`), `gap` (E1.15b: khoảng cách phía ảnh – phía chữ, thang điểm từng kiểu truy vấn), `drift` (E3.9: độ trôi vector ảnh, token, truy vấn khi ảnh tham chiếu bị làm xấu hoặc phục hồi, so với PSNR/SSIM). Thêm `RetrievalPipeline.set_reference_processor` để đổi cách xử lý ảnh mà không nạp lại mô hình. Ý nghĩa ở [01](01_nen_tang_danh_gia.md) mục 1.15 và [03](03_do_ben_va_phuc_hoi_anh.md) E3.9. Kết quả dùng cho phần "Phân tích" của báo cáo (C19).
 
 ## Quyết định Chí phụ trách
 

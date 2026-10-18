@@ -130,3 +130,25 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 | `tools/occlusion_map.py` | C16 | Bản đồ che khuất E1.13. |
 | `tools/visualize_degradations.py` | C16 | Hình E3.7: ảnh gốc / xấu / phục hồi kèm PSNR, SSIM và top-K của từng phiên bản. |
 | `tools/quality_vs_retrieval.py` | C16 | E3.4: tương quan Spearman giữa mức tăng PSNR/SSIM và mức tăng điểm truy xuất; phép phục hồi tốt nhất "cho mắt" và "cho truy xuất". |
+
+## 19/10/2026: phân tích vector ảnh và vector từ (C24)
+
+### Kiểm chứng
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `vector_analysis.py drift` so với `validate.py` cùng cấu hình (phi_B32, CIRR giả lập, `gauss_noise:2`) | Cùng R@1 (4.44): đổi cách xử lý ảnh trong một pipeline cho đúng số của một lượt chạy riêng |
+| `tokens --snap-eval`, cột "Pseudo token" | Bằng R@1 của lượt chạy thường cùng phương pháp |
+| Cả 3 lệnh trên CIRR, CIRCO, FIQ giả lập; phương pháp phi, OTI (đường dẫn tuyệt đối), `image` | Chạy hết; cấu hình trùng giữa `--configs` và `--runs` chỉ tính một lần; lượt của tập khác bị bỏ qua kèm thông báo |
+
+### Sửa
+
+| File | Việc | Thay đổi |
+|---|---|---|
+| `src/retrieval_core.py` | C24 | Thêm `RetrievalPipeline.set_reference_processor`: đổi cách xử lý ảnh tham chiếu mà giữ nguyên mô hình đã nạp (đặc trưng và token tham chiếu được tính lại hoặc đọc từ cache). Không dùng với `--eval-type oti` hay `--attr-rerank`. Không đổi kết quả của `validate.py`, `generate_test_submission.py`. |
+
+### Thêm
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `tools/vector_analysis.py` | C24 | `tokens` (E1.15a): độ lớn, từ thật gần nhất, độ giống nhau giữa các token, độ khớp giữa hai phương pháp (phi, SEARLE, OTI); `--snap-eval` đánh giá lại với token thay bằng từ gần nhất hoặc đưa về độ lớn của từ. `gap` (E1.15b): khoảng cách giữa tâm vector ảnh gallery và tâm từng kiểu vector truy vấn, thang điểm, z-score của ảnh đích, hình PCA. `drift` (E3.9): độ trôi vector ảnh, token, truy vấn của ảnh đã làm xấu / phục hồi / lọc tần số so với ảnh sạch; tương quan Spearman của độ trôi và của PSNR/SSIM với mức thiệt hại (điểm và thứ hạng ảnh đích, chỉ số); bảng "phục hồi có kéo vector về gần ảnh sạch không"; tách theo loại suy giảm với `mixed`. |

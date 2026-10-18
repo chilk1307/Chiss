@@ -82,6 +82,7 @@ Các việc học máy đã xếp vào bảng trên (số file ghi trong ngoặc
 - **Train phi:** T1 (ngày 6) và T2 (ngày 8) = E8.1a/b; H16 (ngày 10) = E8.2a ([08](08_hoc_may_cai_tien_phi.md)).
 - **Sinh lại cụm từ GPT:** H17, C22, C23, D16, H18, D17 (bảng phân công trong [06](06_sinh_lai_cum_tu_gpt.md)).
 - **OTI warm-start:** C21, H15, D15 ([07](07_hoc_may_oti_warm_start.md)).
+- **Phân tích vector ảnh – vector từ** (thêm 19/10): C24; Hòa chạy E1.15 ở H8, H15 ([01](01_nen_tang_danh_gia.md) mục 1.15); Doanh chạy E3.9 ở D11 ([03](03_do_ben_va_phuc_hoi_anh.md)). Chỉ đọc cache và mã hoá lại câu truy vấn nên tốn ít GPU.
 - **Phần còn lại** (E6.3, E6.5, E7.3–E7.6, 8.3–8.6, các hướng của [09](09_hoc_may_huong_mo_rong.md)) làm khi còn GPU, theo thứ tự ưu tiên trong từng file. Phần chưa xong ghi vào mục "Hướng phát triển" của báo cáo.
 
 ## 5. Mốc kiểm tra

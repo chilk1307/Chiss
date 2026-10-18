@@ -98,6 +98,7 @@ Chí cài đúng các tên dưới đây; Hòa và Doanh dùng đúng các tên 
 | `occlusion_map.py` | Bản đồ che khuất | C16 |
 | `visualize_degradations.py` | Hình ảnh gốc / ảnh xấu / ảnh phục hồi kèm kết quả | C16 |
 | `quality_vs_retrieval.py` | Tương quan PSNR/SSIM với điểm truy xuất | C16 |
+| `vector_analysis.py` | Vector ảnh và vector từ: `tokens` (E1.15a), `gap` (E1.15b), `drift` (E3.9) | C24 |
 
 **Bộ chạy Colab trong `colab/`** (việc C2): `setup_env.sh`, `prepare_data.sh <tập...>`, `requirements-xla.txt`, `SEARLE_runner.ipynb`.
 
@@ -226,6 +227,15 @@ Vẽ R@1, R@10 theo số ảnh (thang log). Chưa rõ 6.824 ảnh của lần ch
 
 Đây cũng là E8.1a–b của [08](08_hoc_may_cai_tien_phi.md): chỉ chạy một lần, kết quả dẫn chiếu ở cả hai nơi.
 
+## 1.15. Vector ảnh và vector từ (Chí: C24; Hòa: H8, H15)
+
+SEARLE là một chuỗi vector: ảnh → vector ảnh CLIP → phi → **pseudo-token** (một "từ giả" đặt giữa các vector từ của CLIP) → câu `a photo of $ that ...` → vector truy vấn. Các bảng chỉ số chỉ nhìn đầu cuối của chuỗi; mục này nhìn vào khúc giữa. Công cụ: `tools/vector_analysis.py`.
+
+- **E1.15a, pseudo-token có giống một từ thật không** (`tokens`): so độ lớn của token (phi_B32, SEARLE gốc, token OTI) với độ lớn của 49.406 vector từ CLIP; độ tương đồng với từ thật gần nhất; các token của những ảnh khác nhau có giống nhau quá không (dấu hiệu phi sinh token chung chung); phi và OTI có cho token giống nhau trên cùng một ảnh không. Với `--snap-eval`: đánh giá lại khi thay mỗi token bằng **từ thật gần nhất**, hoặc giữ hướng nhưng **đưa độ lớn về mức của từ thật**. Nếu điểm gần như không đổi thì token hoạt động như một từ; nếu sụt mạnh thì thông tin nằm ở những hướng (hoặc độ lớn) không có từ nào diễn đạt được.
+- **E1.15b, khoảng cách giữa phía ảnh và phía chữ** (`gap`): khoảng cách giữa tâm các vector ảnh gallery và tâm của từng kiểu vector truy vấn (ảnh tham chiếu, câu mô tả, `sum`, truy vấn có pseudo-token); thang điểm của từng kiểu (trung bình, độ lệch chuẩn của điểm với gallery, z-score của ảnh đích); hình PCA. Cột "std ảnh / std" giúp đọc trọng số `--fusion-weight` ở E4.4: điểm ảnh–ảnh thường dao động rộng hơn điểm truy vấn–ảnh, nên một α nhỏ có thể đã có tác dụng lớn; E1.15b đo cụ thể tỉ lệ này.
+
+Kết quả dùng cho phần "Phân tích" của báo cáo; đây là phần giải thích, không phải đóng góp chính. Mục cùng loại cho ảnh xấu là E3.9 ([03](03_do_ben_va_phuc_hoi_anh.md)).
+
 ## Danh sách thí nghiệm
 
 | Mã | Nội dung | Người chạy | Ngày |
@@ -240,6 +250,8 @@ Vẽ R@1, R@10 theo số ảnh (thang log). Chưa rõ 6.824 ảnh của lần ch
 | E1.12 | Ví dụ định tính | Hòa | 11 |
 | E1.13 | Bản đồ che khuất | Hòa | 11 |
 | E1.14a–b | Lượng dữ liệu OTI (tuỳ chọn) | Hòa | 6–9 |
+| E1.15a | Pseudo-token so với từ thật (phi_B32, SEARLE gốc; thêm token OTI sau H15) | Hòa | 6, 11 |
+| E1.15b | Khoảng cách phía ảnh – phía chữ, thang điểm từng kiểu truy vấn | Hòa | 6 |
 
 ## Tiêu chí hoàn thành
 
@@ -263,3 +275,4 @@ Vẽ R@1, R@10 theo số ảnh (thang log). Chưa rõ 6.824 ảnh của lần ch
 - 2026-10-16: tạo kế hoạch (gộp nội dung "Sửa nền đánh giá" và "Baseline, phân tích lỗi" của bản cũ).
 - 2026-10-17: C2–C8 xong; thêm `--clip-model-name`, `--num-workers` vào giao kèo; ghi kết quả đối chiếu số paper (1.6); ghi cách kết hợp đặc trưng CBIR (1.9).
 - 2026-10-18: C9–C15 xong; thêm `--features-cache-dir`, `--phrase-match`, `--concept-filter` vào bảng của `train_phi.py`.
+- 2026-10-19: thêm mục 1.15 (vector ảnh và vector từ, E1.15a–b) và công cụ `vector_analysis.py` (C24).

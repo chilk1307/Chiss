@@ -6,7 +6,7 @@
 1. Bảng baseline 3 tập (CLIP và xử lý ảnh cổ điển), có khoảng tin cậy.
 2. Điểm test chính thức (CIRR, CIRCO) của SEARLE gốc, phi_B32 và cấu hình cuối.
 3. Kết quả thí nghiệm thuộc tính E2.0–E2.9.
-4. Ví dụ định tính và bản đồ che khuất.
+4. Ví dụ định tính, bản đồ che khuất, phân tích vector ảnh – vector từ (E1.15).
 5. Kết quả train phân tích lượng dữ liệu, luồng học máy và bộ câu GPT (nếu đã chạy).
 
 ## 0. Cập nhật 18/10: code đã xong, làm sớm được
@@ -51,7 +51,7 @@ Lần chạy notebook đầu tiên chưa ai thử trên Colab thật: nếu mộ
 | 3 | T2 19/10 | H5 kiểm tra không hồi quy, chạy lại baseline | C4 | E1.7a–f | T4/L4 |
 | 4 | T3 20/10 | H6 baseline CLIP và CBIR cổ điển | C5, C8 | E1.8, E1.9 | T4/L4 |
 | 5 | T4 21/10 | H7 kiểm tra dữ liệu bằng công cụ, khoảng tin cậy, gom kết quả | C7 | E1.2, E1.4 | không cần |
-| 6 | T5 22/10 | H8 phân loại truy vấn, giữ – sửa; T1 train nền (tuỳ chọn) | C10, C11 | E1.10, E1.11, E1.14a | A100 nếu train |
+| 6 | T5 22/10 | H8 phân loại truy vấn, giữ – sửa, vector ảnh – vector từ; T1 train nền (tuỳ chọn) | C10, C11, C24 | E1.10, E1.11, E1.15a–b, E1.14a | T4/L4; A100 nếu train |
 | 7 | T6 23/10 | H9 thống kê thuộc tính, đồng thuận bộ đo → gửi Chí trước 17h; H17 liên kết khái niệm CIRCO val, OTI không dùng câu GPT | C12 | E2.0, E2.2, E7.0, E6.2-Pλ0 | T4/L4 (cho H17) |
 | 8 | T7 24/10 | H10 quét xếp hạng lại; T2 train nền (tuỳ chọn) | C13 | E2.3, E1.14b | T4/L4 (A100 nếu train) |
 | 9 | CN 25/10 | H10 (tiếp): mặt nạ, phủ định; đánh giá T1, T2 | C13 | E2.4, E2.5, E1.14 | T4/L4 |
@@ -192,8 +192,8 @@ $PY tools/collect_results.py --results-dir $R --out $R/summary.md
 ```
 Gửi Chí `summary.md` và 3 bảng khoảng tin cậy.
 
-### H8. Phân loại truy vấn, phân tích giữ – sửa (Ngày 6) — E1.10, E1.11
-Cần: C11.
+### H8. Phân loại truy vấn, phân tích giữ – sửa, vector ảnh – vector từ (Ngày 6) — E1.10, E1.11, E1.15a–b
+Cần: C11, C24.
 ```bash
 R=$DRIVE/results
 $PY tools/query_taxonomy.py --dataset cirr --dataset-path $DATA/CIRR --runs $R/E1.7a-searle-cirr $R/E1.7d-phiB32-cirr $R/E1.8-*-cirr --out $R/E1.10-taxonomy-cirr
@@ -202,6 +202,15 @@ $PY tools/query_taxonomy.py --dataset fashioniq --dataset-path $DATA/FashionIQ -
 $PY tools/keep_edit_analysis.py --dataset cirr --dataset-path $DATA/CIRR --runs $R/E1.7d-phiB32-cirr $R/E1.8-sum-cirr --cache-dir $DRIVE/cache --out $R/E1.11-keepedit-cirr
 $PY tools/keep_edit_analysis.py --dataset circo --dataset-path $DATA/CIRCO --runs $R/E1.7e-phiB32-circo $R/E1.8-sum-circo-ex --cache-dir $DRIVE/cache --out $R/E1.11-keepedit-circo
 ```
+**E1.15a, E1.15b: vector ảnh và vector từ** (cần C24; ý nghĩa ở [01](01_nen_tang_danh_gia.md) mục 1.15). Dùng lại cache của H5 nên chỉ vài phút mỗi lệnh; `--snap-eval` chạy thêm 2 lượt đánh giá cho mỗi phương pháp.
+```bash
+R=$DRIVE/results
+$PY tools/vector_analysis.py tokens --dataset cirr  --dataset-path $DATA/CIRR  --cache-dir $DRIVE/cache --sources searle phi:phi_B32 --snap-eval --out $R/E1.15a-tokens-cirr
+$PY tools/vector_analysis.py tokens --dataset circo --dataset-path $DATA/CIRCO --cache-dir $DRIVE/cache --sources searle phi:phi_B32 --snap-eval --out $R/E1.15a-tokens-circo
+$PY tools/vector_analysis.py gap    --dataset cirr  --dataset-path $DATA/CIRR  --cache-dir $DRIVE/cache --sources phi:phi_B32 --out $R/E1.15b-gap-cirr
+$PY tools/vector_analysis.py gap    --dataset circo --dataset-path $DATA/CIRCO --cache-dir $DRIVE/cache --sources phi:phi_B32 --out $R/E1.15b-gap-circo
+```
+Gửi Chí 4 file `report.md` cùng hình `tokens.png`, `gap.png`.
 
 ### T1. (Tuỳ chọn) Train phi trên 1 shard, chạy nền từ Ngày 6 — E1.14a
 Cần: C10 (đã xong); runtime **A100**; ô 4 thêm `imagenet`. Khoảng 2–3 giờ. Đây cũng là E8.1a của [08](08_hoc_may_cai_tien_phi.md): chỉ chạy một lần, kết quả dẫn chiếu ở cả hai nơi. `--features-cache-dir` lưu đặc trưng CLIP của ảnh train để các lượt train sau (của Doanh và Hòa, cùng tập ảnh) khỏi trích lại.
@@ -321,6 +330,13 @@ for S in 0 10 25 50 100 200 350; do
 done
 ```
 Lặp cho E7.1a, c, d (đổi `E` và tên thư mục kết quả). Gửi Chí bảng kết quả; Chí chọn 1–2 cấu hình cho E7.2 (Doanh, D15). E7.1e (chỉ cosine loss) chạy nếu Chí yêu cầu.
+
+Sau đó chạy E1.15a lần nữa, thêm token OTI (token EMA cuối của mỗi lượt): cho biết token OTI khác token phi bao nhiêu (độ lớn, hướng), và khởi tạo từ phi có giữ token OTI gần phi không.
+```bash
+$PY tools/vector_analysis.py tokens --dataset circo --dataset-path $DATA/CIRCO --cache-dir $DRIVE/cache \
+  --sources phi:phi_B32 oti:E7.1a-random-lr0.02-circo oti:E7.1b-phi-lr0.02-circo oti:E6.2-Plambda0-circo \
+  --snap-eval --out $DRIVE/results/E1.15a-tokens-oti-circo
+```
 
 ### H16. Luồng học máy: train phi với lịch learning rate (chạy nền từ Ngày 10) — E8.2a
 Cần: C10; **A100**; khoảng 6–7 giờ. Chi tiết ở [08](08_hoc_may_cai_tien_phi.md).

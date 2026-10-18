@@ -5,7 +5,7 @@
 **Bàn giao cho Chí (hạn Ngày 13, 29/10):**
 1. Bảng tiền xử lý E4.1–E4.3 (kể cả nhóm truy vấn left/right).
 2. Bảng mức sụt giảm, phục hồi cố định, phục hồi tự động (E3.1–E3.3).
-3. Biểu đồ PSNR/SSIM so với điểm truy xuất (E3.4) và đường cong theo tần số cắt (E3.5).
+3. Biểu đồ PSNR/SSIM so với điểm truy xuất (E3.4), đường cong theo tần số cắt (E3.5) và bảng độ trôi vector (E3.9).
 4. Kết quả phi bền: sàng lọc và bản đầy đủ (E3.8).
 5. Hình minh hoạ (E3.7), độ bền bộ đo thuộc tính (E3.6).
 6. Kết quả luồng học máy và bộ câu GPT (E7.2, E6.1, E6.4), nếu đã chạy.
@@ -57,7 +57,7 @@ Lần chạy notebook đầu tiên chưa ai thử trên Colab thật: nếu mộ
 | 7 | T6 23/10 | D8 phục hồi cố định; sàng lọc (tiếp); nhóm left/right | C9, C11 | E3.2, E3.8a, E4.3b | A100 |
 | 8 | T7 24/10 | D9 đánh giá 3 bản sàng lọc, cùng Chí chọn biến thể; tính đặc trưng ảnh xấu 100k | — | E3.8a | A100 |
 | 9 | CN 25/10 | D10 train phi bền bản đầy đủ (nền); phục hồi tự động | C14 | E3.8b, E3.3 | A100 |
-| 10 | T2 26/10 | D11 PSNR/SSIM; đánh giá phi bền | C16 | E3.4, E3.8c | T4/L4 |
+| 10 | T2 26/10 | D11 PSNR/SSIM; đánh giá phi bền; độ trôi vector | C16, C24 | E3.4, E3.8c, E3.9 | T4/L4 |
 | 11 | T3 27/10 | D12 độ bền bộ đo thuộc tính; hình minh hoạ | C12, C16 | E3.6, E3.7 | T4/L4 |
 | 12 | T4 28/10 | D13 chạy bổ sung; nộp test phi bền (nếu Chí quyết định ở C18); D15 OTI warm-start trên CIRR val (học máy, nếu còn GPU); D16 sinh bộ câu GPT quy mô nhỏ | C18; E7.1 của Hòa; C22, C23 | E7.2, E6.1 | T4/L4; A100 cho D16 |
 | 13 | T5 29/10 | D14 tổng hợp bảng, hình → bàn giao Chí; D17 train phi trên shard s0 với bộ câu mới | C22 | E6.4 | A100 (cho D17) |
@@ -220,7 +220,7 @@ done
   ```
   Lặp lại cấu hình tốt nhất trên CIRCO val.
 
-### D11. PSNR/SSIM; đánh giá phi bền (Ngày 10) — E3.4, E3.8c
+### D11. PSNR/SSIM; đánh giá phi bền; độ trôi vector (Ngày 10) — E3.4, E3.8c, E3.9
 ```bash
 # E3.1 (không phục hồi) là mốc so sánh của từng loại suy giảm, nên phải đưa vào cùng E3.2
 $PY tools/quality_vs_retrieval.py --runs $DRIVE/results/E3.1-*-cirr $DRIVE/results/E3.2-* --out $DRIVE/results/E3.4-quality-cirr
@@ -235,6 +235,19 @@ for D in gauss_noise:2 gauss_blur:2 jpeg:2 low_light:2 salt_pepper:2 motion_blur
 done
 ```
 So với E3.1 (phi_B32 trên cùng suy giảm).
+
+**E3.9, độ trôi vector** (cần C24; ý nghĩa ở [03](03_do_ben_va_phuc_hoi_anh.md)). Chạy sau E3.3. Công cụ đọc `--degrade`, `--restore`, `--freq-filter` từ chính các thư mục kết quả, lấy đặc trưng ảnh đã xử lý từ cache, rồi so vector ảnh, pseudo-token, vector truy vấn với ảnh sạch. Lượt nào chạy không có `--save-quality` (E3.3 trên ảnh sạch, E3.5, E3.8c) thì cột PSNR/SSIM ghi `n/a`, các cột khác vẫn đủ.
+```bash
+R=$DRIVE/results
+$PY tools/vector_analysis.py drift $CIRR  --cache-dir $DRIVE/cache --method phi:phi_B32 \
+  --runs $R/E3.1-*-cirr $R/E3.2-* $R/E3.3-*-cirr $R/E3.5-*-cirr --out $R/E3.9-drift-cirr
+$PY tools/vector_analysis.py drift $CIRCO --cache-dir $DRIVE/cache --method phi:phi_B32 \
+  --runs $R/E3.1-*-circo --out $R/E3.9-drift-circo
+# Phi bền (sau E3.8c): token có ít trôi hơn phi_B32 trên cùng suy giảm không
+$PY tools/vector_analysis.py drift $CIRR  --cache-dir $DRIVE/cache --method phi:phi_B32_robust \
+  --runs $R/E3.8c-robust-*-cirr --out $R/E3.9-drift-robust-cirr
+```
+Khoảng 50 cấu hình trên CIRR, mỗi cấu hình chủ yếu tốn thời gian mã hoá lại câu truy vấn. Gửi Chí 3 file `report.md` và hình `drift_vs_metric.png`.
 
 ### D12. Độ bền bộ đo thuộc tính; hình minh hoạ (Ngày 11) — E3.6, E3.7
 ```bash

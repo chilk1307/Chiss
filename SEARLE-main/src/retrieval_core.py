@@ -737,6 +737,22 @@ class RetrievalPipeline:
             self._memo[name] = compute()
         return self._memo[name]
 
+    def set_reference_processor(self, processor: Optional[ReferenceProcessor]) -> None:
+        """
+        Change the processing of the reference images while keeping the loaded models (tools comparing several
+        processings, e.g. tools/vector_analysis.py drift); the reference features and tokens are then recomputed or
+        read from the cache
+        """
+        if processor is not None and self.args.eval_type == 'oti':
+            raise ValueError("OTI tokens are precomputed on the clean images: the reference processing cannot change "
+                             "them")
+        if self.reranker is not None:
+            raise ValueError("the attribute re-ranker keeps the processing given at construction")
+        self.reference_processor = processor
+        self.reference_info = {}
+        for name in ['clip_references', 'cbir_references', 'tokens']:
+            self._memo.pop(name, None)
+
     def reference_features(self) -> Tuple[torch.Tensor, List[str]]:
         return self._memoized('clip_references', lambda: self._features(
             'clip', self._reference_images(self.preprocess), 'references', self.flip_reference))

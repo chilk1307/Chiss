@@ -100,6 +100,7 @@ File mới `src/degradation_estimation.py`.
 | E3.8a | Sàng lọc phi bền: 3 bản × (ảnh sạch + 8 loại suy giảm mức 2), CIRR val | Doanh | 6–8 |
 | E3.8b | Train phi bền bản đầy đủ | Doanh | 9–10 |
 | E3.8c | Đánh giá phi bền: 3 tập val sạch + bộ suy giảm trên CIRR val, CIRCO val; so với phi_B32 | Doanh | 10 |
+| E3.9 | Độ trôi vector: với mỗi cấu hình của E3.1–E3.3, E3.5, vector ảnh, pseudo-token và vector truy vấn lệch bao nhiêu so với ảnh sạch; độ trôi hay PSNR/SSIM đi cùng mức thiệt hại truy xuất hơn; phép phục hồi có kéo vector ảnh về gần ảnh sạch không; phi bền có ít trôi token hơn phi_B32 không | Doanh | 10 |
 
 ## Kết quả cần có
 
@@ -108,6 +109,7 @@ File mới `src/degradation_estimation.py`.
 3. Đường cong điểm truy xuất theo tần số cắt (E3.5).
 4. Bảng phi bền: suy giảm đã thấy và chưa thấy (E3.8).
 5. Hình minh hoạ (E3.7).
+6. Bảng độ trôi vector và bảng "phục hồi tốt cho mắt hay cho CLIP" (E3.9): giải thích vì sao có phép phục hồi tăng PSNR mà không tăng điểm truy xuất. Công cụ `tools/vector_analysis.py drift` (C24) đọc cấu hình từ chính các thư mục kết quả E3.x và lấy lại đặc trưng ảnh từ cache, nên chỉ tốn GPU cho việc mã hoá lại câu truy vấn (khoảng 15 giây mỗi cấu hình trên CIRR val).
 
 ## Tiêu chí hoàn thành
 
@@ -129,3 +131,4 @@ File mới `src/degradation_estimation.py`.
 ## Lịch sử thay đổi
 
 - 2026-10-16: tạo kế hoạch (mở rộng từ mục độ bền của bản cũ; thêm phục hồi tự động và phi bền).
+- 2026-10-19: thêm E3.9 (độ trôi vector của ảnh tham chiếu đã xử lý).
