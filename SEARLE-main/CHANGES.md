@@ -49,3 +49,48 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 |---|---|---|
 | `.gitignore` | C3 | Đưa vào git các file nhỏ của lần tái lập: `outputs/REPORT*.md`, `outputs/pip_freeze.txt`, `outputs/merge_oti.py`, `outputs/logs/eval*.log`, `outputs/phi_models/phi_B32/*.csv, *.json`. |
 | `.gitattributes` | C2 | Script `.sh` luôn dùng xuống dòng LF (chạy trên Colab). |
+
+## 18/10/2026: Ngày 4–8 của kế hoạch (C9–C15)
+
+### Kiểm chứng
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `validate.py` mặc định sau mọi thay đổi | Trùng số cũ trên CIRR, CIRCO, FashionIQ giả lập |
+| `train_phi.py` mới so với code gốc (`70328e1`), 3 epoch, CPU | Trọng số phi **trùng từng bit**, loss và chỉ số validation trùng |
+| `--resume`: 2 epoch, ngắt, chạy tiếp tới 4 | Trùng từng bit với chạy liền 4 epoch |
+| Bộ suy giảm / phục hồi trên ảnh thật (`demo/sample_images`) | Phục hồi đúng loại tăng PSNR, SSIM (ví dụ muối tiêu mức 2: 14 → 34 dB với median) |
+| E2.1: bộ đo trên ảnh tổng hợp (`tools/test_meters.py`) | Màu 100% (46 sắc độ); sọc 19/20 (đúng cả hướng); độ sáng, độ rực màu, diện tích đơn điệu đúng; mặt nạ Otsu / GrabCut IoU 1,00 |
+| Parser và bộ phân loại, 100 câu thật chấm tay (`tools/grading/`) | Ràng buộc đúng 97%, nhóm sửa đổi đúng 78% |
+| Bộ phân loại so với nhãn `semantic_aspects` của CIRCO val | Phủ định P = R = 1,00; góc nhìn P 0,90, R 0,98; số lượng P 0,71, R 0,97 |
+| Ước lượng suy giảm (`tools/calibrate_restore_rules.py`, 17 ảnh mẫu) | Nhận đúng loại 86,9%; sai số σ nhiễu trung bình 1,1 |
+
+### Sửa
+
+| File | Việc | Thay đổi |
+|---|---|---|
+| `src/retrieval_core.py` | C9, C13, C15, C21 | Cờ `--degrade`, `--restore`, `--freq-filter`, `--save-quality` (chỉ ảnh tham chiếu; PSNR/SSIM, suy giảm và phép phục hồi đã dùng của từng ảnh ghi vào `dump.jsonl`, trung bình vào `metrics.json`); `--fusion-weight`, `--prompt-set`; các cờ `--attr-*`; `--token-file`, `--interp-phi`, `--interp-lambda` cho `--eval-type oti`. Cache phân biệt theo cách xử lý ảnh tham chiếu. |
+| `src/datasets.py` | C9 | `ImageListDataset` nhận thêm bước xử lý ảnh trước tiền xử lý CLIP. |
+| `src/train_phi.py` | C10, C22 | Tra token bằng `dict`; sửa lỗi `train_metrics.csv` chỉ giữ epoch cuối; `--train-on-oti-names`; `--resume` (lưu `checkpoints/resume.pt` mỗi `--save-frequency` epoch: trọng số, optimizer, grad scaler, lịch LR, trạng thái các bộ sinh số ngẫu nhiên); `--aug-feature-dir`, `--aug-prob`; `--feature-noise`; `--lr-scheduler`, `--warmup-epochs`; `--oti-token-type`; `--features-cache-dir`; `--phrase-match`, `--concept-filter`. `comet_ml` thành tuỳ chọn. |
+| `src/validate.py` | C10 | `cirr_compute_val_metrics` rút một số ngẫu nhiên như DataLoader của code gốc, để train giữ đúng chuỗi ngẫu nhiên cũ. |
+| `colab/requirements-xla.txt` | C14 | Thêm `piq==0.8.0` (BRISQUE). |
+
+### Thêm
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `src/degradations.py` | C9 | 8 loại suy giảm × 2 mức, `mixed`; ngẫu nhiên theo tên ảnh. |
+| `src/restorations.py`, `src/restore_oracle.json` | C9, C14 | 14 phép phục hồi (median, gaussian, bilateral, NLM, Wiener, Richardson–Lucy, unsharp, cân bằng histogram, CLAHE, gamma, Retinex, gray-world, white-patch, deblock); bảng `oracle` tạm thời (điền lại sau E3.2). |
+| `src/freq_filters.py` | C9 | Lọc thông thấp / thông cao Gauss trong miền Fourier. |
+| `src/reference_processing.py` | C9 | Chuỗi suy giảm → phục hồi → lọc tần số cho ảnh tham chiếu, PSNR/SSIM. |
+| `src/degradation_estimation.py`, `src/restore_rules.json` | C14 | Ước lượng σ nhiễu (wavelet), nhiễu xung, độ mờ (Laplacian, năng lượng tần số cao), độ khối JPEG, độ sáng, lệch màu (CIELAB); `--restore auto` (luật, ngưỡng trong `restore_rules.json`) và `auto_iqa` (BRISQUE). Ngưỡng hiện tại hiệu chỉnh tạm trên ảnh mẫu, cần hiệu chỉnh lại trên ảnh CIRR train. |
+| `src/prompts.py` | C15 | Bộ mẫu câu; `"a photo of $, {}"` bị bộ tách từ CLIP gộp `$,` thành token khác nên đổi thành `"a photo of $ , {}"`. |
+| `src/attributes/parser.py`, `taxonomy.py` | C11 | Tách ràng buộc thuộc tính (màu, độ sáng, độ rực màu, hoa văn, phóng to; phủ định, "đổi A thành B"); 10 nhóm kiểu sửa đổi. |
+| `src/attributes/meters.py` | C12 | Mặt nạ (Otsu + hình thái học, GrabCut, spectral residual), màu chủ đạo (k-means CIELAB, CIEDE2000), L*, colourfulness Hasler–Süsstrunk, hoa văn (Canny, tỉ số đỉnh/nền phổ Fourier, LBP, Gabor), diện tích đối tượng; mức thoả mãn từng ràng buộc. |
+| `src/attributes/rerank.py` | C13 | Xếp hạng lại top-K; đo thuộc tính một lần mỗi ảnh, cache trong `--cache-dir`. |
+| `src/gpt_phrases_utils.py` | C22 | Cách thay khái niệm bằng `$` và lọc khái niệm (`legacy` = hành vi gốc). |
+| `tools/test_parser.py`, `tools/grading/` | C11 | 71 câu kiểm thử; phiếu chấm tay 100 câu thật. |
+| `tools/query_taxonomy.py`, `tools/keep_edit_analysis.py` | C11 | Chỉ số theo nhóm sửa đổi (kèm khoảng tin cậy, so sánh cặp, phiếu chấm tay); phân tích lỗi giữ – sửa và biểu đồ. |
+| `tools/test_meters.py`, `tools/attribute_stats.py` | C12 | E2.1; E2.0, E2.2 (`--agreement`), E3.6 (`--degrade`, `--restore`). |
+| `tools/merge_oti.py`, `tools/precompute_degraded_features.py` | C10 | Gộp shard OTI bất kỳ; đặc trưng CLIP của ảnh ImageNet đã làm xấu (lưu theo phần, chạy tiếp được). |
+| `tools/calibrate_restore_rules.py` | C14 | Chọn ngưỡng cho `--restore auto`, báo cáo độ chính xác nhận dạng và sai số σ. |

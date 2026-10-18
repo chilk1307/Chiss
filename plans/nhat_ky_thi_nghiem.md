@@ -23,6 +23,11 @@
 | B9 | 16/10 | File nộp test | phi_B32 | CIRCO test | _(chờ điểm server)_ | — | `outputs/submissions/phi_B32_circo.json` | 800 truy vấn |
 | B10 | | File nộp test | SEARLE gốc | CIRR test1 | _(chờ)_ | — | sinh ở H4 | |
 | B11 | | File nộp test | SEARLE gốc | CIRCO test | _(chờ)_ | — | sinh ở H4 | |
+| E2.0s | 18/10 | Tỉ lệ truy vấn có thuộc tính đo được (**sơ bộ**) | `attributes/parser.py` | CIRR val (4.181), FIQ val (6.016, đủ câu), CIRCO val (220) | 36,3% / 90,7% / 25,5% | Ngưỡng M3: 10% | file chú thích công khai trên GitHub của từng tập | Chưa phải lượt chính thức (H9, trên tập con FIQ có ảnh) |
+| E2.1 | 18/10 | Kiểm thử bộ đo trên ảnh tổng hợp | `attributes/meters.py` | 46 sắc độ màu, 20 ảnh sọc/không sọc, 6 ảnh mẫu | Màu 100%; sọc 19/20 (đúng hướng 8/8); độ sáng, độ rực màu, diện tích đơn điệu; mặt nạ Otsu, GrabCut IoU 1,00, spectral residual 0,05–0,08 | — | `tools/test_meters.py` | Sai duy nhất: đốm thưa (ít cạnh) không được coi là có hoa văn |
+| C11-chấm | 18/10 | Độ chính xác parser và bộ phân loại | `parser.py`, `taxonomy.py` | 100 câu thật ngẫu nhiên (50 CIRR + 50 FIQ, seed 1) | Ràng buộc đúng 97%; nhóm đúng 78% | — | `tools/grading/parser_grading_seed1.csv` | Chấm bởi trợ lý AI thay Chí: Chí nên rà lại phiếu |
+| C11-CIRCO | 18/10 | Bộ phân loại so với nhãn người gán `semantic_aspects` | `taxonomy.py` | CIRCO val (220) | Phủ định P/R 1,00/1,00; góc nhìn 0,90/0,98; số lượng 0,71/0,97; vị trí–nền 0,85/0,77; thêm đối tượng 0,53/0,60 | — | `annotations/val.json` của CIRCO | |
+| E3.3c | 18/10 | Hiệu chỉnh luật `--restore auto` (**tạm**) | `degradation_estimation.py` | 17 ảnh mẫu × (sạch + 8 loại × 2 mức) | Nhận đúng loại 86,9%; sai số σ nhiễu trung bình 1,1; 9/17 ảnh sạch được giữ nguyên | — | `tools/calibrate_restore_rules.py` | Phải hiệu chỉnh lại trên 300 ảnh CIRR train trước E3.3 |
 
 ## Mẫu ghi chi tiết
 

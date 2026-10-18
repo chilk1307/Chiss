@@ -1,0 +1,70 @@
+{
+  "source": "17 images from SEARLE-main\\demo\\sample_images (seed 0)",
+  "rules": [
+    {
+      "feature": "impulse_ratio",
+      "op": ">",
+      "threshold": 0.010229,
+      "method": "median",
+      "detects": [
+        "salt_pepper"
+      ]
+    },
+    {
+      "feature": "l_mean",
+      "op": "<",
+      "threshold": 35.02492,
+      "method": "clahe",
+      "detects": [
+        "low_light"
+      ]
+    },
+    {
+      "feature": "blockiness",
+      "op": ">",
+      "threshold": 1.2171,
+      "method": "deblock",
+      "detects": [
+        "jpeg"
+      ]
+    },
+    {
+      "feature": "noise_sigma",
+      "op": ">",
+      "threshold": 9.273153,
+      "method": "nlm",
+      "detects": [
+        "gauss_noise"
+      ]
+    },
+    {
+      "feature": "hf_ratio",
+      "op": "<",
+      "threshold": 0.005116,
+      "method": "unsharp",
+      "detects": [
+        "gauss_blur",
+        "motion_blur",
+        "low_res"
+      ]
+    },
+    {
+      "feature": "cast",
+      "op": ">",
+      "threshold": 14.437285,
+      "method": "gray_world",
+      "detects": [
+        "color_cast"
+      ]
+    }
+  ],
+  "balanced_accuracy_per_rule": {
+    "impulse_ratio": 1.0,
+    "l_mean": 0.926,
+    "blockiness": 0.994,
+    "noise_sigma": 0.906,
+    "hf_ratio": 0.92,
+    "cast": 0.855
+  },
+  "identification_accuracy": 0.869
+}

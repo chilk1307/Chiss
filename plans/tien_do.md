@@ -1,6 +1,6 @@
 # Tiến độ dự án
 
-**Cập nhật:** 18/10/2026 (Ngày 2): Chí làm xong C9, C11, C12, C13, C15 (Ngày 4–8); C10, C14, C21, C22 làm một phần; C16 chưa làm. Đã push lên GitHub (commit `1dd0bbe`).
+**Cập nhật:** 18/10/2026 (Ngày 2): Chí làm xong toàn bộ việc code tới Ngày 8 (C3, C5–C15); C21, C22 (Ngày 9) làm một phần; C16 chưa làm.
 **Cách dùng:** làm xong việc nào thì đổi `- [ ]` thành `- [x]`, ghi ngày xong ở cuối dòng, rồi cập nhật bảng tóm tắt bên dưới. Việc làm được một phần thì giữ `- [ ]` và ghi "(một phần: …)".
 
 ## Tóm tắt
@@ -8,10 +8,10 @@
 | Phần | Xong | Tổng | Tiến độ | Ghi chú |
 |---|---|---|---|---|
 | **Giai đoạn 0: tái lập SEARLE** (trước kế hoạch) | 13 | 15 | **87%** | Còn thiếu: điểm test từ server; FashionIQ chỉ có tập con |
-| Kế hoạch 2 tuần: Chí (C1–C23) | 10 | 23 | 43% | C3, C5–C9, C11–C13, C15 xong; C2, C4 chờ nghiệm thu trên Colab; C10, C14, C21, C22 một phần; C1 cần làm tay |
+| Kế hoạch 2 tuần: Chí (C1–C23) | 12 | 23 | 52% | C3, C5–C15 xong (toàn bộ việc tới Ngày 8); C2, C4 chờ nghiệm thu trên Colab; C21, C22 một phần; C1 cần làm tay |
 | Kế hoạch 2 tuần: Hòa (H1–H18, T1–T2) | 1 | 20 | 5% | H3 xong (file subset CIRR đã có) |
 | Kế hoạch 2 tuần: Doanh (D1–D17) | 0 | 17 | 0% | |
-| **Kế hoạch 2 tuần: cả nhóm** | 11 | 60 | **18%** | Code của Chí đi trước lịch khoảng 5 ngày |
+| **Kế hoạch 2 tuần: cả nhóm** | 13 | 60 | **22%** | Code của Chí đã tới hết Ngày 8 |
 | Mốc kiểm tra M1–M5 | 0 | 5 | 0% | M1 hạn 18/10 |
 
 Trang tự đánh giá của demo (`/api/assessment`, chỉ tính phần tái lập): lõi **93%**, tính cả phần mở rộng (SEARLE-XL, SEARLE-OTI) **75%**.
@@ -52,11 +52,11 @@ Chi tiết: [nhiem_vu_Chi.md](nhiem_vu_Chi.md).
 - [x] **C7** (Ngày 3) `check_datasets.py`, `bootstrap_ci.py`, `collect_results.py`; đối chiếu số "Paper" (khớp arXiv v2) — 17/10
 - [x] **C8** (Ngày 3) CBIR cổ điển (histogram màu, LBP, HOG, Gabor), `--cbir-features`, `--cbir-text-weight` — 17/10
 - [x] **C9** (Ngày 4) Suy giảm, phục hồi, lọc tần số; `--save-quality` (thử trên ảnh thật: phục hồi đúng loại đều tăng PSNR/SSIM) — 18/10
-- [ ] **C10** (Ngày 5) Code train: tra token bằng dict, train tập con, `--resume`, ảnh xấu, nhiễu đặc trưng, lịch LR, loại token (một phần: đã viết đủ cờ, `tools/merge_oti.py`, `tools/precompute_degraded_features.py`; kiểm thử so với code cũ chưa đạt: epoch 1 khớp, epoch 2–3 lệch nhẹ; chưa thử `--resume`, `--aug-feature-dir`)
+- [x] **C10** (Ngày 5) Code train: tra token bằng dict, train tập con, `--resume`, ảnh xấu, nhiễu đặc trưng, lịch LR, loại token (trên dữ liệu giả lập: trùng từng bit code gốc `70328e1`; `--resume` trùng từng bit chạy liền; mọi cờ mới chạy được; Doanh kiểm lại trên dữ liệu thật ở D2) — 18/10
 - [x] **C11** (Ngày 5) Bộ tách ràng buộc, phân loại truy vấn, phân tích giữ – sửa; chấm tay 100 câu (parser đúng 97%, phân loại đúng 78%; phiếu chấm ở `tools/grading/`) — 18/10
 - [x] **C12** (Ngày 6) Bộ đo thuộc tính; kiểm thử trên ảnh tổng hợp (E2.1 đã chạy: màu 100%, sọc 19/20, mặt nạ Otsu/GrabCut IoU 1,00); `attribute_stats.py` — 18/10
 - [x] **C13** (Ngày 7) Xếp hạng lại theo thuộc tính (code xong, thử trên dữ liệu giả lập; họp mốc M3 theo lịch 23/10, theo dõi ở mục Mốc) — 18/10
-- [ ] **C14** (Ngày 8) Ước lượng suy giảm; `--restore auto`, `auto_iqa`, `oracle`; `--degrade mixed` (một phần: `oracle`, `--degrade mixed` chạy được; `degradation_estimation.py` đã viết nhưng thiếu file ngưỡng `restore_rules.json` và công cụ hiệu chỉnh, nên `auto` chưa chạy; `auto_iqa` cần thêm `piq` vào `requirements-xla.txt`)
+- [x] **C14** (Ngày 8) Ước lượng suy giảm; `--restore auto`, `auto_iqa`, `oracle`; `--degrade mixed` (cả 4 chạy được; `tools/calibrate_restore_rules.py` nhận đúng loại suy giảm 86,9%; ngưỡng hiện tại là bản tạm từ 17 ảnh mẫu, phải hiệu chỉnh lại trên 300 ảnh CIRR train trước E3.3) — 18/10
 - [x] **C15** (Ngày 8) Kết hợp điểm ảnh + văn bản; ensemble prompt (sửa lỗi mẫu `"$,"` làm mất token `$`) — 18/10
 - [ ] **C16** (Ngày 9) Công cụ hình ảnh: ví dụ, bản đồ che khuất, hình suy giảm, PSNR so với điểm truy xuất
 - [ ] **C17** (Ngày 10–11) Demo: tab thuộc tính, tab ảnh xấu → phục hồi, so sánh phương pháp, nút "Vì sao?"
@@ -124,7 +124,8 @@ Chi tiết: [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md).
 
 ## Việc tiếp theo
 
-1. Chí: sửa lệch của C10 trước tiên (Doanh cần code train từ Ngày 5–6); tạo `restore_rules.json` và công cụ hiệu chỉnh cho C14; làm C21, C16, phần còn lại của C22; cập nhật `CHANGES.md` và bảng giao kèo ở [01](01_nen_tang_danh_gia.md). Code đã lên GitHub, nhưng Doanh chưa nên dùng `train_phi.py` mới cho thí nghiệm chính thức trước khi C10 qua kiểm thử.
+1. Chí: Ngày 9 (C16, phần còn lại của C21, C22). Trước E3.3 (Ngày 9), hiệu chỉnh lại ngưỡng phục hồi tự động trên ảnh CIRR train ở Colab rồi commit file `src/restore_rules.json`:
+   `$PY tools/calibrate_restore_rules.py --images-dir $DATA/CIRR/train --n 300 --out src/restore_rules.json --report-dir $DRIVE/results/E3.3-calibration`
 2. Chí: làm tay phần còn lại của C1; chạy notebook một lần trên Colab để nghiệm thu C2.
 3. Hòa: H1, H2 ngay khi code lên GitHub. Ô "Kiểm tra dữ liệu (E1.2)" của notebook đã dùng được `tools/check_datasets.py`, thay cho đoạn Python chép tay ở H2.
 4. Doanh: D1 ngay khi code lên GitHub.

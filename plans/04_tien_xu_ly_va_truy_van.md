@@ -50,7 +50,9 @@ Lấy trung bình đặc trưng của ảnh gốc và ảnh lật ngang:
 ## 4.5. Ensemble prompt (Hòa, Ngày 10)
 
 Mã hoá cùng một truy vấn bằng nhiều mẫu câu rồi lấy trung bình (`--prompt-set ensemble`):
-`a photo of $ that {c}`, `an image of $ that {c}`, `a picture of $ that {c}`, `$ that {c}`, `a photo of $, {c}`, `a photo of $ which {c}`.
+`a photo of $ that {c}`, `an image of $ that {c}`, `a picture of $ that {c}`, `$ that {c}`, `a photo of $ , {c}`, `a photo of $ which {c}`.
+
+Mẫu thứ năm phải có dấu cách trước dấu phẩy: bộ tách từ của CLIP gộp `$,` thành một token khác, khi đó không còn token `$` để thay bằng pseudo-token (phát hiện khi viết C15).
 
 ## Đã kiểm tra: chọn checkpoint khác `phi_last`
 

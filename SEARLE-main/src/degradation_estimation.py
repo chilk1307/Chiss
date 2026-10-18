@@ -14,7 +14,8 @@ Measured quantities (all classical image processing):
                     restore_rules.json (calibrate them with tools/calibrate_restore_rules.py on CIRR *train* images,
                     never on the evaluation sets). The first rule that fires gives the restoration; none = keep.
 --restore auto_iqa  try a few restorations and keep the one with the best (lowest) BRISQUE score, a no-reference
-                    image quality measure (library piq). Candidates are scored on a copy resized to 256 px.
+                    image quality measure (library piq). Candidates are scored on a 320 x 320 central crop at the
+                    original resolution.
 """
 import json
 from pathlib import Path
@@ -122,14 +123,17 @@ def brisque_score(image: np.ndarray) -> float:
         return float(piq.brisque(x, data_range=1.0, reduction='none').item())
 
 
-def choose_by_iqa(image: np.ndarray, candidates: List[str] = IQA_CANDIDATES) -> Optional[str]:
+def choose_by_iqa(image: np.ndarray, candidates: List[str] = IQA_CANDIDATES, crop: int = 320) -> Optional[str]:
+    """
+    Restoration whose output has the best BRISQUE score, computed on a central crop at the original resolution
+    (downscaling would average away the noise and blocking that BRISQUE has to see)
+    """
     h, w = image.shape[:2]
-    scale = 256.0 / max(h, w)
-    small = cv2.resize(image, (max(1, round(w * scale)), max(1, round(h * scale))), interpolation=cv2.INTER_AREA) \
-        if scale < 1 else image
+    top, left = max(0, (h - crop) // 2), max(0, (w - crop) // 2)
+    patch = np.ascontiguousarray(image[top:top + crop, left:left + crop])
     scores = {}
     for method in candidates:
-        candidate = small if method == 'none' else restore(small, method)
+        candidate = patch if method == 'none' else restore(patch, method)
         scores[method] = brisque_score(candidate)
     best = min(scores, key=scores.get)
     return None if best == 'none' else best

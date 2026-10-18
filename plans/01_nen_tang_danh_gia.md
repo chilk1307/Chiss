@@ -76,6 +76,8 @@ Chí cài đúng các tên dưới đây; Hòa và Doanh dùng đúng các tên 
 | `--feature-noise` | σ của nhiễu Gaussian (tương đối theo độ lớn đặc trưng) cộng vào đầu vào phi | 0 |
 | `--lr-scheduler`, `--warmup-epochs` | Lịch learning rate (`none` hoặc `cosine`) và số epoch khởi động, cho [08](08_hoc_may_cai_tien_phi.md) | `none`, 0 |
 | `--oti-token-type` | Token đích khi chưng cất: `ema` hoặc `raw`, cho [08](08_hoc_may_cai_tien_phi.md) | `ema` |
+| `--features-cache-dir` | Cache đặc trưng CLIP của ảnh train, dùng chung cho mọi lượt train cùng backbone và tập ảnh (bỏ qua bước trích đặc trưng nên chuỗi ngẫu nhiên khác lượt không cache) | không |
+| `--phrase-match`, `--concept-filter` | Cách thay khái niệm bằng `$` và cách lọc câu GPT ([06](06_sinh_lai_cum_tu_gpt.md) mục 6.2) | `legacy`, `legacy` |
 
 **Luồng học máy:** tham số của OTI warm-start (`--init`, `--snapshot-steps`, `--token-file`...) nằm ở [07](07_hoc_may_oti_warm_start.md) mục 7.1–7.2.
 
@@ -260,3 +262,4 @@ Vẽ R@1, R@10 theo số ảnh (thang log). Chưa rõ 6.824 ảnh của lần ch
 
 - 2026-10-16: tạo kế hoạch (gộp nội dung "Sửa nền đánh giá" và "Baseline, phân tích lỗi" của bản cũ).
 - 2026-10-17: C2–C8 xong; thêm `--clip-model-name`, `--num-workers` vào giao kèo; ghi kết quả đối chiếu số paper (1.6); ghi cách kết hợp đặc trưng CBIR (1.9).
+- 2026-10-18: C9–C15 xong; thêm `--features-cache-dir`, `--phrase-match`, `--concept-filter` vào bảng của `train_phi.py`.
