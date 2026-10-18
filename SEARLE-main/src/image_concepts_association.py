@@ -9,7 +9,7 @@ from clip.model import CLIP
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from data_utils import PROJECT_ROOT, targetpad_transform
+from data_utils import PROJECT_ROOT, targetpad_transform, collate_fn
 from datasets import FashionIQDataset, CIRRDataset, CIRCODataset, ImageNetDataset
 from utils import get_templates, device
 
@@ -60,7 +60,8 @@ def associate_image_concepts(args):
     texts = df["DisplayName"].values.tolist()
 
     # Create the dataloader
-    loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=False)
+    loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=False,
+                        collate_fn=collate_fn)  # skips images that cannot be loaded instead of crashing
 
     # Compute the embeddings for the dictionary
     bs = args.batch_size

@@ -94,3 +94,39 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 | `tools/test_meters.py`, `tools/attribute_stats.py` | C12 | E2.1; E2.0, E2.2 (`--agreement`), E3.6 (`--degrade`, `--restore`). |
 | `tools/merge_oti.py`, `tools/precompute_degraded_features.py` | C10 | Gộp shard OTI bất kỳ; đặc trưng CLIP của ảnh ImageNet đã làm xấu (lưu theo phần, chạy tiếp được). |
 | `tools/calibrate_restore_rules.py` | C14 | Chọn ngưỡng cho `--restore auto`, báo cáo độ chính xác nhận dạng và sai số σ. |
+
+## 18/10/2026 (tiếp): các việc còn lại trước khi train trên Colab (C16, C21, C22, C23)
+
+### Kiểm chứng
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `oti_inversion.py` mới, `--init random`, so với code gốc (`70328e1`) trên CIRCO giả lập | Token thường và token EMA **trùng từng bit** |
+| `--init phi` + `--snapshot-steps 0,6,12` | Snapshot bước cuối trùng token cuối; bước 0: token thường = token EMA; có `timing.json`; snapshot không làm đổi token |
+| `--gpt-exp-name none --lambda_gpt 0` | Chạy được, không cần file câu GPT; thiếu `--lambda_gpt 0` thì báo lỗi |
+| `validate.py --eval-type oti --token-file ...`, `--interp-phi`, `--interp-lambda` | Chạy được với mọi snapshot |
+| Đọc / ghi `concept_to_phrases.pkl` dạng luồng | Đúng với pickle protocol 2–5; file ghi ra nạp được bằng `pickle.load` của Python 3.8 |
+| Công cụ hình ảnh (C16) trên các lượt chạy giả lập | Cả 4 công cụ chạy; ví dụ có xếp hạng lại hiển thị lý do ("blue: closest colour dE 5") |
+| `generate_phrases_llm.py` với mô hình nhỏ (CPU) | Chế độ `continue` (tiny-gpt2) và `instruct` (SmolLM2-135M-Instruct) chạy hết đường; bộ lọc loại câu không đúng khuôn |
+
+### Sửa
+
+| File | Việc | Thay đổi |
+|---|---|---|
+| `src/oti_inversion.py` | C21, C22 | `--init {random,phi,searle}`, `--init-phi-exp-name`, `--init-phi-checkpoint`; `--snapshot-steps` (lưu `oti_pseudo_tokens_step<N>.pt`, `ema_oti_pseudo_tokens_step<N>.pt`, chạy tiếp được); `timing.json`; `--gpt-exp-name none` (chỉ cosine loss, không cần file câu); `--phrase-match`, `--concept-filter`; `--num-workers`. Trích đặc trưng ảnh được chuyển lên trước khi khởi tạo token (không đổi chuỗi ngẫu nhiên). |
+| `src/gpt_phrases_utils.py` | C22, C23 | Đọc `concept_to_phrases.pkl` dạng luồng (không nạp cả file 700 MB), ghi dạng luồng (protocol 4); tìm khái niệm "dung sai" (dấu nháy, gạch nối, khoảng trắng); khái niệm không còn câu nào bị lọc ra. |
+| `src/gpt_phrases_generation.py` | C22 | Sửa lỗi `args.saved_exp_name` chưa khai báo: thêm `--saved-exp-name` (mặc định bằng `--exp-name`). |
+| `src/image_concepts_association.py` | — | DataLoader dùng `collate_fn` (bỏ qua ảnh không đọc được thay vì dừng). |
+
+### Thêm
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `tools/phrases_stats.py` | C22 | E6.1: thống kê bộ câu (trùng lặp, khái niệm bị luật lọc cũ bỏ, khái niệm nằm lẫn trong từ khác, độ dài, distinct-2, khái niệm thực sự được dùng). |
+| `tools/clean_phrases.py` | C22 | Tạo bộ P1 đã làm sạch (giữ câu có khái niệm như một từ trọn vẹn, chuẩn hoá cách viết khái niệm, bỏ trùng, ≤ 75 token CLIP). |
+| `tools/generate_phrases_llm.py`, `tools/prompts/p3.txt`, `colab/gen_phrases.ipynb` | C23 | Sinh bộ câu P2 (mô hình nền, viết tiếp `a photo of {concept} that`) hoặc P3 (mô hình instruct, câu mô tả chi tiết nhìn thấy được); chế độ quy mô nhỏ theo shard; lưu tiến độ, chạy tiếp được; notebook chạy trên runtime Colab riêng. |
+| `tools/run_utils.py` | C16 | Đọc thư mục kết quả, tìm file ảnh, dựng lại mô hình của một lượt chạy từ `metrics.json`. |
+| `tools/visualize_queries.py` | C16 | Ví dụ định tính E1.12 (`--compare`), E2.8 (`--explain-attributes`), `--nearest-words`. |
+| `tools/occlusion_map.py` | C16 | Bản đồ che khuất E1.13. |
+| `tools/visualize_degradations.py` | C16 | Hình E3.7: ảnh gốc / xấu / phục hồi kèm PSNR, SSIM và top-K của từng phiên bản. |
+| `tools/quality_vs_retrieval.py` | C16 | E3.4: tương quan Spearman giữa mức tăng PSNR/SSIM và mức tăng điểm truy xuất; phép phục hồi tốt nhất "cho mắt" và "cho truy xuất". |

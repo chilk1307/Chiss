@@ -39,7 +39,8 @@ def generate_phrases(args):
         print("BEWARE: experiment path already exists. Overwriting.", flush=True)
 
     if args.resume_experiment:
-        experiment_path = PROJECT_ROOT / 'data' / 'GPT_phrases' / args.saved_exp_name
+        # the original code read args.saved_exp_name without defining the argument (AttributeError)
+        experiment_path = PROJECT_ROOT / 'data' / 'GPT_phrases' / (args.saved_exp_name or args.exp_name)
         print(f"Loading from {experiment_path}", flush=True)
         with open(experiment_path / 'concept_to_phrases.pkl', 'rb') as f:
             concept_to_phrases = pickle.load(f)
@@ -107,6 +108,8 @@ def main():
     parser.add_argument("--no-repeat-ngram-size", type=int, default=2, help=" Size of the n-gram to avoid repetitions")
     parser.add_argument("--resume-experiment", action='store_true', help="Resume the experiment if it exists",
                         default=False)
+    parser.add_argument("--saved-exp-name", type=str, default=None,
+                        help="Experiment to resume from (default: --exp-name)")
 
     args = parser.parse_args()
     generate_phrases(args)

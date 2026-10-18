@@ -207,7 +207,8 @@ done
 
 ### D11. PSNR/SSIM; đánh giá phi bền (Ngày 10) — E3.4, E3.8c
 ```bash
-$PY tools/quality_vs_retrieval.py --runs $DRIVE/results/E3.2-* --out $DRIVE/results/E3.4-quality-cirr
+# E3.1 (không phục hồi) là mốc so sánh của từng loại suy giảm, nên phải đưa vào cùng E3.2
+$PY tools/quality_vs_retrieval.py --runs $DRIVE/results/E3.1-*-cirr $DRIVE/results/E3.2-* --out $DRIVE/results/E3.4-quality-cirr
 # Phi bền (sau khi train xong): ảnh sạch trên 3 tập và bộ suy giảm trên CIRR, CIRCO
 ROB="--eval-type phi --exp-name phi_B32_robust --phi-checkpoint-name phi_last.pt --cache-dir $DRIVE/cache"
 $PY src/validate.py $ROB $CIRR  --output-dir $DRIVE/results/E3.8c-robust-clean-cirr
@@ -249,7 +250,16 @@ Bỏ qua nếu hết GPU; không ảnh hưởng các phần khác.
 
 ### D16. Bộ câu GPT: thống kê và sinh bộ câu mới quy mô nhỏ (Ngày 12) — E6.1
 Cần: C22 (công cụ thống kê, làm sạch câu) và C23 (notebook sinh câu `colab/gen_phrases.ipynb`). Ý nghĩa các bộ câu P0–P3 và lệnh chi tiết ở [06](06_sinh_lai_cum_tu_gpt.md). 1–3 giờ A100.
-- E6.1: thống kê chất lượng cho bộ gốc P0 và bộ đã làm sạch P1 bằng `tools/phrases_stats.py`.
+- Tạo bộ P1 nếu trên Drive chưa có `outputs/GPT_phrases/GPTNeo27B_clean` (chỉ cần CPU, khoảng 10–20 phút):
+  ```bash
+  $PY tools/clean_phrases.py --phrases data/GPT_phrases/GPTNeo27B/concept_to_phrases.pkl --out-exp GPTNeo27B_clean
+  ```
+- E6.1: thống kê chất lượng cho bộ gốc P0 và bộ đã làm sạch P1 bằng `tools/phrases_stats.py`:
+  ```bash
+  SC=data/similar_concepts/imagenet/test/ViT-B32_top_250_ensembling_image_texts.csv
+  $PY tools/phrases_stats.py --phrases data/GPT_phrases/GPTNeo27B/concept_to_phrases.pkl --similar-concepts $SC --out $DRIVE/results/E6.1-stats-P0
+  $PY tools/phrases_stats.py --phrases data/GPT_phrases/GPTNeo27B_clean/concept_to_phrases.pkl --similar-concepts $SC --out $DRIVE/results/E6.1-stats-P1
+  ```
 - Sinh bộ câu mới (P2 hoặc P3, theo 06) bằng `colab/gen_phrases.ipynb` ở **chế độ quy mô nhỏ**: chỉ các khái niệm dùng cho ảnh shard s0, 64 câu mỗi khái niệm. Ghi lại thời gian sinh để ước lượng chi phí cho bộ đầy đủ.
 - Chạy E6.1 cho bộ mới; báo Hòa tên thư mục bộ câu để chạy H18.
 - Nếu trùng giờ GPU với D13, D15: ưu tiên D13 trừ khi Chí báo khác.

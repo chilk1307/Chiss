@@ -1,6 +1,6 @@
 # Tiến độ dự án
 
-**Cập nhật:** 18/10/2026 (Ngày 2): Chí làm xong toàn bộ việc code tới Ngày 8 (C3, C5–C15); C21, C22 (Ngày 9) làm một phần; C16 chưa làm.
+**Cập nhật:** 18/10/2026 (Ngày 2): Chí làm xong toàn bộ phần code mà các lượt chạy Colab cần (C3, C5–C16, C21–C23). Việc còn lại của Chí: C1 (làm tay), nghiệm thu C2, C4 trên Colab, C17–C20.
 **Cách dùng:** làm xong việc nào thì đổi `- [ ]` thành `- [x]`, ghi ngày xong ở cuối dòng, rồi cập nhật bảng tóm tắt bên dưới. Việc làm được một phần thì giữ `- [ ]` và ghi "(một phần: …)".
 
 ## Tóm tắt
@@ -8,10 +8,10 @@
 | Phần | Xong | Tổng | Tiến độ | Ghi chú |
 |---|---|---|---|---|
 | **Giai đoạn 0: tái lập SEARLE** (trước kế hoạch) | 13 | 15 | **87%** | Còn thiếu: điểm test từ server; FashionIQ chỉ có tập con |
-| Kế hoạch 2 tuần: Chí (C1–C23) | 12 | 23 | 52% | C3, C5–C15 xong (toàn bộ việc tới Ngày 8); C2, C4 chờ nghiệm thu trên Colab; C21, C22 một phần; C1 cần làm tay |
+| Kế hoạch 2 tuần: Chí (C1–C23) | 16 | 23 | 70% | Xong toàn bộ code cần cho Colab (C3, C5–C16, C21–C23); C2, C4 chờ nghiệm thu trên Colab; C1 cần làm tay; còn C17–C20 (demo, cấu hình cuối, báo cáo, video) |
 | Kế hoạch 2 tuần: Hòa (H1–H18, T1–T2) | 1 | 20 | 5% | H3 xong (file subset CIRR đã có) |
 | Kế hoạch 2 tuần: Doanh (D1–D17) | 0 | 17 | 0% | |
-| **Kế hoạch 2 tuần: cả nhóm** | 13 | 60 | **22%** | Code của Chí đã tới hết Ngày 8 |
+| **Kế hoạch 2 tuần: cả nhóm** | 17 | 60 | **28%** | Mọi lệnh Colab của Hòa, Doanh đã có code để chạy |
 | Mốc kiểm tra M1–M5 | 0 | 5 | 0% | M1 hạn 18/10 |
 
 Trang tự đánh giá của demo (`/api/assessment`, chỉ tính phần tái lập): lõi **93%**, tính cả phần mở rộng (SEARLE-XL, SEARLE-OTI) **75%**.
@@ -58,14 +58,14 @@ Chi tiết: [nhiem_vu_Chi.md](nhiem_vu_Chi.md).
 - [x] **C13** (Ngày 7) Xếp hạng lại theo thuộc tính (code xong, thử trên dữ liệu giả lập; họp mốc M3 theo lịch 23/10, theo dõi ở mục Mốc) — 18/10
 - [x] **C14** (Ngày 8) Ước lượng suy giảm; `--restore auto`, `auto_iqa`, `oracle`; `--degrade mixed` (cả 4 chạy được; `tools/calibrate_restore_rules.py` nhận đúng loại suy giảm 86,9%; ngưỡng hiện tại là bản tạm từ 17 ảnh mẫu, phải hiệu chỉnh lại trên 300 ảnh CIRR train trước E3.3) — 18/10
 - [x] **C15** (Ngày 8) Kết hợp điểm ảnh + văn bản; ensemble prompt (sửa lỗi mẫu `"$,"` làm mất token `$`) — 18/10
-- [ ] **C16** (Ngày 9) Công cụ hình ảnh: ví dụ, bản đồ che khuất, hình suy giảm, PSNR so với điểm truy xuất
+- [x] **C16** (Ngày 9) Công cụ hình ảnh: ví dụ, bản đồ che khuất, hình suy giảm, PSNR so với điểm truy xuất (`visualize_queries.py`, `occlusion_map.py`, `visualize_degradations.py`, `quality_vs_retrieval.py`; thử trên dữ liệu giả lập) — 18/10
 - [ ] **C17** (Ngày 10–11) Demo: tab thuộc tính, tab ảnh xấu → phục hồi, so sánh phương pháp, nút "Vì sao?"
 - [ ] **C18** (Ngày 11) Chọn cấu hình cuối, gửi lệnh nộp test
 - [ ] **C19** (Ngày 12–13) README gốc repo, `CHANGES.md`, báo cáo, slide
 - [ ] **C20** (Ngày 14) Video demo, kiểm tra trước khi nộp, nộp bài
-- [ ] **C21** (Ngày 9) Code OTI warm-start (`--init`, `--snapshot-steps`, `--token-file`) (một phần: `--token-file`, `--interp-phi`, `--interp-lambda` đã có ở phía đánh giá; `oti_inversion.py` chưa sửa)
-- [ ] **C22** (Ngày 9) Công cụ bộ câu GPT: thống kê, làm sạch (P1), `--phrase-match`, `--concept-filter`, sửa lỗi `saved_exp_name` (một phần: `src/gpt_phrases_utils.py` và hai cờ cho `train_phi.py`; còn phía OTI, `phrases_stats.py`, `clean_phrases.py`, lỗi `saved_exp_name`)
-- [ ] **C23** (Ngày 11) Notebook sinh câu `colab/gen_phrases.ipynb`, chế độ quy mô nhỏ
+- [x] **C21** (Ngày 9) Code OTI warm-start (`--init`, `--snapshot-steps`, `--token-file`) (`--init random` trùng từng bit code gốc; thêm `timing.json`, `--gpt-exp-name none`, nội suy token khi đánh giá) — 18/10
+- [x] **C22** (Ngày 9) Công cụ bộ câu GPT: thống kê, làm sạch (P1), `--phrase-match`, `--concept-filter`, sửa lỗi `saved_exp_name` (đọc/ghi file câu dạng luồng, không cần nạp cả 700 MB) — 18/10
+- [x] **C23** (Ngày 11) Notebook sinh câu `colab/gen_phrases.ipynb`, chế độ quy mô nhỏ (`tools/generate_phrases_llm.py` chế độ P2 và P3; chạy thử với mô hình nhỏ trên CPU; chạy thật trên Colab ở D16) — 18/10
 
 ## Kế hoạch 2 tuần: Hòa (Colab)
 
@@ -124,7 +124,7 @@ Chi tiết: [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md).
 
 ## Việc tiếp theo
 
-1. Chí: Ngày 9 (C16, phần còn lại của C21, C22). Trước E3.3 (Ngày 9), hiệu chỉnh lại ngưỡng phục hồi tự động trên ảnh CIRR train ở Colab rồi commit file `src/restore_rules.json`:
+1. Chí: làm tay C1, chạy notebook một lần để nghiệm thu C2; sau đó C17 (demo). Trước E3.3 (Ngày 9), hiệu chỉnh lại ngưỡng phục hồi tự động trên ảnh CIRR train ở Colab rồi commit file `src/restore_rules.json`:
    `$PY tools/calibrate_restore_rules.py --images-dir $DATA/CIRR/train --n 300 --out src/restore_rules.json --report-dir $DRIVE/results/E3.3-calibration`
 2. Chí: làm tay phần còn lại của C1; chạy notebook một lần trên Colab để nghiệm thu C2.
 3. Hòa: H1, H2 ngay khi code lên GitHub. Ô "Kiểm tra dữ liệu (E1.2)" của notebook đã dùng được `tools/check_datasets.py`, thay cho đoạn Python chép tay ở H2.
