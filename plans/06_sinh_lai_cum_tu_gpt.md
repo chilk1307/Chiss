@@ -24,7 +24,7 @@
 | 6 | Sinh tuần tự từng khái niệm, không gộp batch giữa các khái niệm | [gpt_phrases_generation.py:58-77](../SEARLE-main/src/gpt_phrases_generation.py#L58-L77) | Rất chậm nếu sinh lại bằng code cũ |
 | 7 | File danh sách khái niệm trong repo đã bị sửa so với bản gốc (lần kiểm tra `git status` trước đây báo `M data/oidv7-class-descriptions.csv`) | `data/oidv7-class-descriptions.csv` | Phải xác định đúng danh sách khái niệm trước khi sinh lại, nếu không bộ câu mới lệch với file `similar_concepts` |
 
-Mức độ thật của các vấn đề 2–4 **chưa đo**; mục 6.1 đo trước khi quyết định.
+**Đã đo (E6.1 trên P0, 18/10):** vấn đề 2 nhỏ (câu trùng 0,06%; câu dài quá 75 token CLIP 0%); vấn đề 3 gần như không có (luật lọc cũ chỉ bỏ 2/20.931 khái niệm, đều do mất dấu cách trước dấu nháy, đã cứu được bằng `clean_phrases.py`); vấn đề 4: khái niệm nằm lẫn trong từ khác 0%, nhưng **12,1% câu chứa khái niệm nhiều lần**, khi đó `train_phi.py` gốc thay mọi lần xuất hiện bằng `$` mà chỉ `$` đầu được thay bằng pseudo-token (các `$` sau thành nhiễu) — `--phrase-match word` sửa đúng chỗ này. Nội dung câu thường không mang thông tin thị giác ("a photo of Abdomen that is not a photo"), độ đa dạng distinct-2 trung bình 0,365: lý do chính để thử P3. Làm sạch P1 chỉ bỏ 3.489/5.358.336 câu, nên P1 gần như trùng P0.
 
 ## Các bộ câu sẽ so sánh
 
@@ -79,7 +79,9 @@ Kiểm tra không hồi quy: với `legacy`, 2 epoch đầu của train phi ra �
 
 **Hậu kỳ chung cho P2, P3:** cùng bộ lọc của mục 6.2 (ranh giới từ, bỏ trùng, ≤ 77 token CLIP), bỏ câu mở đầu kiểu "Here are…", lọc câu không phải tiếng Anh. Số câu mỗi khái niệm: mặc định 256 như P0; nếu tốn quá thì 64 và ghi rõ.
 
-**Quy mô nhỏ trước (D16):** chỉ sinh cho các khái niệm dùng cho ảnh shard s0 (top-15 cho OTI, top-150 cho phi, lấy từ file `similar_concepts`), 64 câu mỗi khái niệm. Đo thời gian rồi ngoại suy cho toàn bộ; chỉ sinh bộ đầy đủ khi ước lượng nằm trong ngân sách GPU.
+**Quy mô nhỏ trước (D16):** E6.1 cho thấy top-150 khái niệm của phi đã phủ 99% trong 20.931 khái niệm (đo trên 6.824 ảnh), nên "khái niệm của shard s0" gần như là toàn bộ. Vì vậy chạy theo hai lượt, 64 câu mỗi khái niệm:
+1. `SCOPE = "circo_val"`: top-15 khái niệm của ảnh CIRCO val (cần E7.0 của H17), vài nghìn khái niệm, đủ cho H18 (E6.2);
+2. `SCOPE = "s0"` (gần như mọi khái niệm) cho D17 (E6.4), chỉ khi lượt 1 đo được thời gian nằm trong ngân sách GPU.
 
 **Script:** `colab/gen_phrases.ipynb` (runtime riêng), lưu tiến độ mỗi 500 khái niệm lên Drive để chạy tiếp khi Colab ngắt.
 
@@ -144,3 +146,4 @@ Vì D16 chạy ở quy mô nhỏ (khái niệm của shard s0, 64 câu), kết q
 
 - 2026-10-16: tạo file. Chuyển "Sinh lại cụm từ GPT" từ danh sách để sau BTL vào kế hoạch chính theo yêu cầu; gộp phần giải thích về `concept_to_phrases.pkl` từ file 06 cũ (`06_de_xuat_sau_btl.md`, đã xoá).
 - 2026-10-16: thêm bảng phân công H17, C22, C23, D16, H18, D17 theo chỗ trống trong lịch; E6.4 dùng T1 (`phi_scale_s0`) làm baseline cùng quy mô; sinh câu quy mô nhỏ trước.
+- 2026-10-18: C22, C23 xong; ghi kết quả E6.1 trên P0 và P1; quy mô nhỏ đổi thành hai lượt (CIRCO val trước, shard s0 sau) vì top-150 khái niệm của phi phủ gần hết danh sách.

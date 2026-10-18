@@ -37,13 +37,16 @@ def tolerant_pattern(concept: str):
     produced by the decoders of language models ("t - shirt", "jack-o’-lantern")
     """
     parts = []
-    for ch in concept:
+    special = APOSTROPHES + DASHES
+    for i, ch in enumerate(concept):
         if ch in APOSTROPHES:
             parts.append(r"\s*[" + re.escape(APOSTROPHES) + r"]\s*")
         elif ch in DASHES:
             parts.append(r"\s*[" + re.escape(DASHES) + r"]\s*")
         elif ch.isspace():
-            parts.append(r"\s+")
+            # next to a quote or a dash the space may disappear ("Grevillea 'moonlight'" -> "Grevillea'moonlight'")
+            near_special = (i > 0 and concept[i - 1] in special) or (i + 1 < len(concept) and concept[i + 1] in special)
+            parts.append(r"\s*" if near_special else r"\s+")
         else:
             parts.append(re.escape(ch))
     return re.compile(r"(?<!\w)" + ''.join(parts) + r"(?!\w)", re.IGNORECASE)

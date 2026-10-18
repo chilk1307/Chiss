@@ -260,7 +260,7 @@ Cần: C22 (công cụ thống kê, làm sạch câu) và C23 (notebook sinh câ
   $PY tools/phrases_stats.py --phrases data/GPT_phrases/GPTNeo27B/concept_to_phrases.pkl --similar-concepts $SC --out $DRIVE/results/E6.1-stats-P0
   $PY tools/phrases_stats.py --phrases data/GPT_phrases/GPTNeo27B_clean/concept_to_phrases.pkl --similar-concepts $SC --out $DRIVE/results/E6.1-stats-P1
   ```
-- Sinh bộ câu mới (P2 hoặc P3, theo 06) bằng `colab/gen_phrases.ipynb` ở **chế độ quy mô nhỏ**: chỉ các khái niệm dùng cho ảnh shard s0, 64 câu mỗi khái niệm. Ghi lại thời gian sinh để ước lượng chi phí cho bộ đầy đủ.
+- Sinh bộ câu mới (P2 hoặc P3, theo 06) bằng `colab/gen_phrases.ipynb`, 64 câu mỗi khái niệm: lượt 1 `SCOPE = "circo_val"` (vài nghìn khái niệm, cho H18); lượt 2 `SCOPE = "s0"` (gần như mọi khái niệm, cho D17) chỉ khi thời gian đo ở lượt 1 cho thấy còn đủ GPU. Ghi lại thời gian sinh để ước lượng chi phí cho bộ đầy đủ.
 - Chạy E6.1 cho bộ mới; báo Hòa tên thư mục bộ câu để chạy H18.
 - Nếu trùng giờ GPU với D13, D15: ưu tiên D13 trừ khi Chí báo khác.
 
