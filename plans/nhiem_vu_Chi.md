@@ -9,7 +9,34 @@
 4. Xong việc nào thì đẩy lên GitHub và nhắn nhóm: "Xong C…, Hòa chạy được H…, Doanh chạy được D…".
 5. Ưu tiên việc đang làm người khác phải chờ (cột "Ai đang chờ").
 
+## Tình trạng (cập nhật 18/10)
+
+Phần code cho các lượt chạy Colab đã xong sớm hơn lịch, đã có trên GitHub. Chi tiết từng file ở [CHANGES.md](../SEARLE-main/CHANGES.md), tiến độ ở [tien_do.md](tien_do.md).
+
+| Việc | Trạng thái |
+|---|---|
+| C1 | **Chưa**, phải làm tay: chia sẻ Drive, kiểm tra dung lượng, báo Hòa về việc tạo `.tar` |
+| C2 | Code xong (`colab/`); **chờ nghiệm thu**: chạy notebook trên runtime mới ra CIRR R@1 = 25.66 (Hòa làm ở H1) |
+| C3, C5–C16 | Xong, kiểm thử trên dữ liệu giả lập và ảnh mẫu |
+| C4 | Code xong; **chờ nghiệm thu** trên dữ liệu thật ở H5 của Hòa |
+| C10 | Xong; `train_phi.py` mới trùng từng bit code gốc trên dữ liệu giả lập; Doanh kiểm lại trên dữ liệu thật ở D2 |
+| C14 | Xong; ngưỡng của `--restore auto` mới là bản tạm (17 ảnh mẫu), **phải hiệu chỉnh lại** (xem dưới) |
+| C19 | Một phần: `CHANGES.md` đã có; README gốc repo, báo cáo, slide chưa |
+| C21–C23 | Xong |
+| C17, C18, C20 | Chưa; C17 làm được ngay, C18 chờ kết quả của Hòa và Doanh |
+
+**Việc Chí còn phải làm, theo thứ tự:**
+1. C1 (làm tay), để Hòa và Doanh bắt đầu H1, D1.
+2. Trước E3.3 của Doanh (D10): hiệu chỉnh ngưỡng phục hồi tự động trên ảnh CIRR train ở Colab rồi commit `src/restore_rules.json`:
+   `$PY tools/calibrate_restore_rules.py --images-dir $DATA/CIRR/train --n 300 --out src/restore_rules.json --report-dir $DRIVE/results/E3.3-calibration`
+3. Sau E3.2 của Doanh (D8): điền bảng `oracle` trong `src/restore_oracle.json` bằng phép phục hồi tốt nhất của từng loại suy giảm.
+4. Họp mốc M3 (23/10) khi có E2.0, E2.2 của Hòa. Số sơ bộ Chí đo trên file chú thích công khai: truy vấn có thuộc tính đo được chiếm FIQ 90,7%, CIRR 36,3%, CIRCO 25,5% (đều vượt ngưỡng 10%).
+5. C17 (demo), rồi C18–C20 khi có kết quả.
+6. Rà lại phiếu chấm tay `tools/grading/parser_grading_seed1.csv` (do trợ lý AI chấm thay Chí: parser đúng 97%, bộ phân loại đúng 78%).
+
 ## Lịch theo ngày
+
+Lịch gốc, giữ để theo dõi. Các việc code đã xong sớm (xem bảng trên); cột "Ai đang chờ" giờ chỉ còn là thứ tự ưu tiên khi trả lời lỗi của Hòa và Doanh.
 
 | Ngày | Ngày tháng | Việc | Ai đang chờ |
 |---|---|---|---|

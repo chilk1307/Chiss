@@ -9,6 +9,19 @@
 4. Ví dụ định tính và bản đồ che khuất.
 5. Kết quả train phân tích lượng dữ liệu, luồng học máy và bộ câu GPT (nếu đã chạy).
 
+## 0. Cập nhật 18/10: code đã xong, làm sớm được
+
+Toàn bộ code mà các việc H1–H18 cần đã có trên GitHub. Lịch ở mục 3 là lịch gốc; hạn chế duy nhất khi làm sớm là quota GPU. Thứ tự gợi ý:
+
+1. **H1, H2, H4** (không cần GPU mạnh).
+2. **H5**: làm sớm nhất có thể, vì **Doanh cần cache của H5 để làm D3**; đây cũng là nghiệm thu bộ module mới (C4). Số CIRR lệch quá 0,05 so với bảng kỳ vọng thì dừng và báo Chí.
+3. **H6, H7, H8, H9, H17**: code đã đủ. H9 càng sớm càng tốt để Chí họp mốc M3.
+4. **H10, H11** chờ Chí chọn trọng số sau khi xem kết quả H9.
+5. **T1, H16** (A100, chạy nền nhiều giờ): chỉ chạy khi còn quota; dùng chung A100 với Doanh nên báo nhau trước khi chạy.
+6. **H15** làm được ngay sau H17; **H18** chờ Doanh sinh xong bộ câu ở D16.
+
+Lần chạy notebook đầu tiên chưa ai thử trên Colab thật: nếu một ô lỗi, gửi Chí tên ô và 30 dòng cuối log.
+
 ## 1. Chuẩn bị (Ngày 1, làm một lần)
 
 1. **Drive:** mở link thư mục `SEARLE` Chí chia sẻ → chuột phải → *Sắp xếp* → *Thêm lối tắt* → chọn *Drive của tôi*. Nhờ vậy trên Colab thư mục luôn nằm ở `/content/drive/MyDrive/SEARLE`, giống máy của Chí.
@@ -34,7 +47,7 @@
 | Ngày | Ngày tháng | Việc | Cần có từ Chí | Mã thí nghiệm | GPU |
 |---|---|---|---|---|---|
 | 1 | T7 17/10 | H1 dựng Colab, đóng gói dữ liệu; H2 kiểm tra dữ liệu | C2 | E1.2 | không cần |
-| 2 | CN 18/10 | H4 sinh file test của SEARLE gốc bằng code cũ; nộp test của SEARLE gốc và phi_B32 (H3 đã xong) | C3 (file nộp phi_B32 trong git) | B8–B11 | T4/L4 |
+| 2 | CN 18/10 | H4 sinh file test của SEARLE gốc; nộp test của SEARLE gốc và phi_B32 (H3 đã xong) | C3 (file nộp phi_B32 trong git) | B8–B11 | T4/L4 |
 | 3 | T2 19/10 | H5 kiểm tra không hồi quy, chạy lại baseline | C4 | E1.7a–f | T4/L4 |
 | 4 | T3 20/10 | H6 baseline CLIP và CBIR cổ điển | C5, C8 | E1.8, E1.9 | T4/L4 |
 | 5 | T4 21/10 | H7 kiểm tra dữ liệu bằng công cụ, khoảng tin cậy, gom kết quả | C7 | E1.2, E1.4 | không cần |
@@ -58,14 +71,14 @@
   tar -cf CIRR.tar CIRR
   tar -cf CIRCO.tar CIRCO      # khoảng 19 GB ảnh, lâu: để chạy trong lúc làm H2
   ```
-- Chạy thử bằng code cũ:
+- Chạy thử (code trên GitHub đã là bản mới; đây cũng là nghiệm thu bộ chạy Colab):
   ```bash
   $PY src/validate.py --eval-type searle --dataset cirr --dataset-path $DATA/CIRR
   ```
   Kỳ vọng: `cirr_recall_at1 = 25.66` (±0.05). Ghi lại thời gian chạy.
 
 ### H2. Kiểm tra dữ liệu nhanh (Ngày 1) — E1.2
-Chạy trong một ô **Python** (không phải `%%bash`):
+Cách nhanh: chạy ô "Kiểm tra dữ liệu (E1.2)" của notebook (gọi `tools/check_datasets.py`, ghi `$DRIVE/results/E1.2-dataset-check/report.md`). Nếu ô đó lỗi, dùng đoạn Python dưới đây (chạy trong một ô **Python**, không phải `%%bash`):
 ```python
 import json, os
 DATA = "/content/data"
@@ -191,19 +204,21 @@ $PY tools/keep_edit_analysis.py --dataset circo --dataset-path $DATA/CIRCO --run
 ```
 
 ### T1. (Tuỳ chọn) Train phi trên 1 shard, chạy nền từ Ngày 6 — E1.14a
-Cần: C10; runtime **A100**; ô 4 thêm `imagenet`. Khoảng 2–3 giờ. Đây cũng là E8.1a của [08](08_hoc_may_cai_tien_phi.md): chỉ chạy một lần, kết quả dẫn chiếu ở cả hai nơi.
+Cần: C10 (đã xong); runtime **A100**; ô 4 thêm `imagenet`. Khoảng 2–3 giờ. Đây cũng là E8.1a của [08](08_hoc_may_cai_tien_phi.md): chỉ chạy một lần, kết quả dẫn chiếu ở cả hai nơi. `--features-cache-dir` lưu đặc trưng CLIP của ảnh train để các lượt train sau (của Doanh và Hòa, cùng tập ảnh) khỏi trích lại.
 ```bash
 mkdir -p $DRIVE/results/E1.14a-train-s0
 nohup $PY src/train_phi.py --exp-name phi_scale_s0 --clip-model-name ViT-B/32 \
   --imagenet-dataset-path $DATA/ImageNet1K --cirr-dataset-path $DATA/CIRR \
   --oti-exp-name oti_B32_s0 --train-on-oti-names --num-epochs 100 \
-  --validation-frequency 5 --save-training > $DRIVE/results/E1.14a-train-s0/train.log 2>&1 &
+  --validation-frequency 5 --save-training --features-cache-dir $DRIVE/cache/train_features \
+  > $DRIVE/results/E1.14a-train-s0/train.log 2>&1 &
 ```
+Lượt nạp đặc trưng từ cache bỏ qua bước trích đặc trưng nên chuỗi số ngẫu nhiên hơi khác lượt tự trích (lượt đầu tiên, tạo ra cache, thì giống lượt không dùng cache). Khác biệt này chỉ ở mức nhiễu huấn luyện, nhưng để so sánh công bằng thì mọi lượt train đem so với T1 (D17, H16...) nên cùng dùng `--features-cache-dir $DRIVE/cache/train_features`.
 - Theo dõi: `tail -n 3 $DRIVE/results/E1.14a-train-s0/train.log`.
 - Colab ngắt: chạy lại ô 1–5, rồi chạy đúng lệnh trên, thêm `--resume`.
 
 ### H9. Thống kê thuộc tính, đồng thuận bộ đo (Ngày 7) — E2.0, E2.2
-Cần: C12. **Gửi kết quả cho Chí trước 17h** để họp mốc M3.
+Cần: C12 (đã xong). **Gửi kết quả cho Chí trước 17h** để họp mốc M3. E2.0 chỉ đọc câu mô tả nên không cần GPU. Số sơ bộ Chí đo trên file chú thích công khai (truy vấn có ít nhất một ràng buộc): FIQ 90,7%, CIRR 36,3%, CIRCO 25,5%; số của Hòa trên tập con có đủ ảnh sẽ hơi khác. E2.2 báo, với mỗi họ thuộc tính, tỉ lệ đồng thuận giữa bộ đo và câu mô tả, kèm mức ngẫu nhiên để so.
 ```bash
 R=$DRIVE/results
 $PY tools/attribute_stats.py --dataset cirr      --dataset-path $DATA/CIRR      --out $R/E2.0-stats-cirr
@@ -295,7 +310,17 @@ $PY src/oti_inversion.py --exp-name E7.1c-phi-lr0.005-circo    $OTI --init phi $
 $PY src/oti_inversion.py --exp-name E7.1d-searle-lr0.02-circo  $OTI --init searle --learning-rate 0.02
 $PY src/oti_inversion.py --exp-name E7.1d-searle-lr0.005-circo $OTI --init searle --learning-rate 0.005
 ```
-Sau đó đánh giá từng bước đã lưu, **cả token thường lẫn token EMA**, theo lệnh mẫu ở [07](07_hoc_may_oti_warm_start.md) mục 7.2 (`--eval-type oti --token-file ...`). Gửi Chí bảng kết quả; Chí chọn 1–2 cấu hình cho E7.2 (Doanh, D15). E7.1e (chỉ cosine loss) chạy nếu Chí yêu cầu.
+Token lưu trong `data/oti_pseudo_tokens/circo/val/<tên>/` (liên kết tới Drive), mỗi bước một cặp file `oti_pseudo_tokens_step<N>.pt` và `ema_oti_pseudo_tokens_step<N>.pt`; thời gian từng batch ở `timing.json`. Sau đó đánh giá từng bước đã lưu, **cả token thường lẫn token EMA** (ví dụ cho E7.1b):
+```bash
+E=E7.1b-phi-lr0.02-circo
+for S in 0 10 25 50 100 200 350; do
+  for T in oti_pseudo_tokens ema_oti_pseudo_tokens; do
+    $PY src/validate.py --eval-type oti --exp-name $E --token-file ${T}_step$S.pt --dataset circo --dataset-path $DATA/CIRCO \
+      --cache-dir $DRIVE/cache --output-dir $DRIVE/results/E7.1b-step$S-$T-circo
+  done
+done
+```
+Lặp cho E7.1a, c, d (đổi `E` và tên thư mục kết quả). Gửi Chí bảng kết quả; Chí chọn 1–2 cấu hình cho E7.2 (Doanh, D15). E7.1e (chỉ cosine loss) chạy nếu Chí yêu cầu.
 
 ### H16. Luồng học máy: train phi với lịch learning rate (chạy nền từ Ngày 10) — E8.2a
 Cần: C10; **A100**; khoảng 6–7 giờ. Chi tiết ở [08](08_hoc_may_cai_tien_phi.md).

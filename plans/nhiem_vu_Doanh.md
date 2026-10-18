@@ -10,6 +10,20 @@
 5. Hình minh hoạ (E3.7), độ bền bộ đo thuộc tính (E3.6).
 6. Kết quả luồng học máy và bộ câu GPT (E7.2, E6.1, E6.4), nếu đã chạy.
 
+## 0. Cập nhật 18/10: code đã xong, làm sớm được
+
+Toàn bộ code mà các việc D1–D17 cần đã có trên GitHub. Lịch ở mục 3 là lịch gốc; hạn chế duy nhất khi làm sớm là quota GPU. Thứ tự gợi ý:
+
+1. **D1, D2**. D2 giờ chạy bản `train_phi.py` mới trên dữ liệu thật: epoch 1 phải ra R@1 khoảng 22,05 (mục D2); lệch nhiều thì dừng và báo Chí.
+2. **D5, D6** (E3.1, E3.5): không phải chờ ai.
+3. **D3, D4** (đệm ảnh, nội suy, lật ảnh): chờ **Hòa xong H5** để dùng lại cache gallery; nếu chưa có cache vẫn chạy được, chỉ chậm hơn ở lượt đầu.
+4. **D7, D8, D9** (A100): đặc trưng ảnh xấu, sàng lọc phi bền, phục hồi cố định E3.2. Sau D8 gửi Chí bảng E3.2 để điền bảng `oracle`.
+5. **D10** (train bản đầy đủ, E3.3): train phi bền chạy được ngay; **E3.3 (phục hồi tự động) chờ Chí hiệu chỉnh và commit `src/restore_rules.json`**, nhớ chạy ô lấy code mới (ô 2) trước khi chạy E3.3.
+6. **D16**: lượt 1 chỉ sinh câu cho CIRCO val (vài nghìn khái niệm); **D17** chờ bộ câu của D16 và dùng chung `--features-cache-dir` với T1 của Hòa (xem H-T1).
+7. **D15** chờ kết quả E7.1 của Hòa.
+
+Lần chạy notebook đầu tiên chưa ai thử trên Colab thật: nếu một ô lỗi, gửi Chí tên ô và 30 dòng cuối log.
+
 ## 1. Chuẩn bị (Ngày 1, làm một lần)
 
 1. **Drive:** mở link thư mục `SEARLE` Chí chia sẻ → chuột phải → *Sắp xếp* → *Thêm lối tắt* → *Drive của tôi*. Trên Colab thư mục nằm ở `/content/drive/MyDrive/SEARLE`.
@@ -35,7 +49,7 @@
 | Ngày | Ngày tháng | Việc | Cần có từ Chí / Hòa | Mã thí nghiệm | GPU |
 |---|---|---|---|---|---|
 | 1 | T7 17/10 | D1 dựng Colab, giải nén ImageNet, kiểm tra file trên Drive | C2 | — | không cần |
-| 2 | CN 18/10 | D2 chạy thử train 2 epoch bằng code cũ, đo thời gian | — | — | A100 |
+| 2 | CN 18/10 | D2 chạy thử train 2 epoch, đo thời gian | — | — | A100 |
 | 3 | T2 19/10 | D3 đệm ảnh, nội suy (buổi chiều) | C6; Hòa xong H5 (cache) | E4.1, E4.2 | T4/L4 |
 | 4 | T3 20/10 | D4 lật ảnh; cấu hình tốt nhất trên CIRCO, FIQ | C6 | E4.3 | T4/L4 |
 | 5 | T4 21/10 | D5 mức sụt giảm; D6 phân tích tần số | C9 | E3.1, E3.5 | T4/L4 |
@@ -68,7 +82,8 @@ CIRCO="--dataset circo --dataset-path $DATA/CIRCO"
   ls $DATA/ImageNet1K/test | head -3; ls $DATA/ImageNet1K/test | wc -l   # phải là 100000
   ```
 
-### D2. Chạy thử train 2 epoch bằng code cũ (Ngày 2)
+### D2. Chạy thử train 2 epoch (Ngày 2)
+Code là bản `train_phi.py` mới (trùng từng bit code gốc trên dữ liệu giả lập, chưa thử trên dữ liệu thật): đây là lần kiểm tra trên dữ liệu thật.
 ```bash
 $PY src/train_phi.py --exp-name dryrun_2ep --clip-model-name ViT-B/32 \
   --imagenet-dataset-path $DATA/ImageNet1K --cirr-dataset-path $DATA/CIRR \
@@ -193,7 +208,7 @@ done
     --aug-feature-dir $DRIVE/cache/imagenet_full --aug-prob 0.5 > $DRIVE/results/E3.8b-train-robust/train.log 2>&1 &
   ```
   Colab ngắt: chạy lại đúng lệnh, thêm `--resume`.
-- **E3.3 phục hồi tự động** (cần C14):
+- **E3.3 phục hồi tự động** (cần C14; `--restore auto` dùng ngưỡng trong `src/restore_rules.json`, hiện là bản tạm: **chỉ chạy E3.3 sau khi Chí báo đã hiệu chỉnh lại ngưỡng trên CIRR train**; `auto_iqa` tải trọng số BRISQUE từ GitHub ở lần dùng đầu nên cần internet; `oracle` đọc bảng `src/restore_oracle.json` mà Chí điền sau E3.2):
   ```bash
   for R in none auto auto_iqa oracle; do
     $PY src/validate.py $PHI $CIRR --degrade mixed --restore $R --save-quality --output-dir $DRIVE/results/E3.3-mixed-$R-cirr
