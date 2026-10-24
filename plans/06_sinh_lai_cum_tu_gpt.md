@@ -99,7 +99,7 @@ Mọi so sánh dùng khoảng tin cậy bootstrap ([01](01_nen_tang_danh_gia.md)
 
 ## Bảng phân công (người, ngày)
 
-Các file nhiệm vụ ([nhiem_vu_Chi.md](nhiem_vu_Chi.md), [nhiem_vu_Hoa.md](nhiem_vu_Hoa.md), [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md)) trỏ tới bảng này. Lịch xếp vào chỗ còn trống của luồng xử lý ảnh; mã việc nối tiếp các mã đã dùng trong file nhiệm vụ.
+File nhiệm vụ [nhiem_vu_Chi.md](nhiem_vu_Chi.md) (từ 24/10 gộp cả việc của Hòa và Doanh) trỏ tới bảng này. Lịch xếp vào chỗ còn trống của luồng xử lý ảnh; mã việc nối tiếp các mã đã dùng trong file nhiệm vụ.
 
 | Mã | Ngày | Người | Việc | Cần code mới? | GPU |
 |---|---|---|---|---|---|

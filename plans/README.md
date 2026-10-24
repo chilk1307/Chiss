@@ -7,6 +7,8 @@
 - **Hòa:** chạy trên Colab: dựng môi trường, kiểm tra dữ liệu, baseline, nộp test, thí nghiệm của đóng góp chính, train phân tích lượng dữ liệu.
 - **Doanh:** chạy trên Colab: thí nghiệm tiền xử lý ảnh, độ bền với ảnh xấu và phục hồi ảnh, train phi bền với ảnh xấu.
 
+**Từ 24/10 Chí làm một mình** toàn bộ việc còn lại. Ba file nhiệm vụ đã gộp vào [nhiem_vu_Chi.md](nhiem_vu_Chi.md) (giữ nguyên mã việc C, H, D, T); lệnh train ở [nhiem_vu_train_Colab.md](nhiem_vu_train_Colab.md). Code ở GitHub `chilk1307/Chiss`.
+
 Kế hoạch gồm hai luồng chạy song song: **xử lý ảnh** (01–05, ưu tiên trong lịch 14 ngày) và **học máy** (06–09, chạy vào thời gian GPU còn rảnh, xem mục 4).
 
 ## 1. Mục tiêu
@@ -35,9 +37,8 @@ Sau 2 tuần, nhóm có:
 | [07_hoc_may_oti_warm_start.md](07_hoc_may_oti_warm_start.md) | **Học máy:** OTI khởi tạo từ phi (warm-start), chế độ chính xác cao cho demo | Chí, Hòa |
 | [08_hoc_may_cai_tien_phi.md](08_hoc_may_cai_tien_phi.md) | **Học máy:** lượng dữ liệu, lịch LR, loss, kiến trúc, nhiễu đặc trưng | Chí, Hòa, Doanh |
 | [09_hoc_may_huong_mo_rong.md](09_hoc_may_huong_mo_rong.md) | **Học máy:** LLM, SEARLE-XL, nhiều token, thích nghi miền, iSEARLE, ứng dụng thực tế | Chí |
-| [nhiem_vu_Chi.md](nhiem_vu_Chi.md) | Việc của Chí theo từng ngày | Chí |
-| [nhiem_vu_Hoa.md](nhiem_vu_Hoa.md) | Việc của Hòa theo từng ngày, kèm lệnh chạy | Hòa |
-| [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md) | Việc của Doanh theo từng ngày, kèm lệnh chạy | Doanh |
+| [nhiem_vu_Chi.md](nhiem_vu_Chi.md) | Mọi việc còn lại (C, H, D, T) theo từng ngày, kèm lệnh chạy; gộp ba file nhiệm vụ cũ | Chí |
+| [nhiem_vu_train_Colab.md](nhiem_vu_train_Colab.md) | Lệnh mọi lượt train phi trên Colab A100, thứ tự chạy | Chí |
 | [nhat_ky_thi_nghiem.md](nhat_ky_thi_nghiem.md) | Nhật ký thí nghiệm | Cả nhóm |
 | [tien_do.md](tien_do.md) | Bảng tiến độ có ô đánh dấu cho từng việc và từng mốc | Cả nhóm |
 
@@ -46,11 +47,11 @@ Sau 2 tuần, nhóm có:
 | Người | Làm | Không làm | File nhiệm vụ |
 |---|---|---|---|
 | Chí | Toàn bộ code (`src/`, `tools/`, `colab/`, demo); ý tưởng; thiết kế thí nghiệm; chọn cấu hình cuối; báo cáo, slide, video | Không ngồi canh các lượt chạy dài trên Colab | [nhiem_vu_Chi.md](nhiem_vu_Chi.md) |
-| Hòa | Chạy trên Colab: môi trường, dữ liệu, baseline, nộp test, thí nghiệm thuộc tính, ví dụ định tính, train phân tích lượng dữ liệu | Không sửa code; gặp lỗi thì gửi log cho Chí | [nhiem_vu_Hoa.md](nhiem_vu_Hoa.md) |
-| Doanh | Chạy trên Colab: tiền xử lý, độ bền và phục hồi ảnh, train phi bền với ảnh xấu | Không sửa code; gặp lỗi thì gửi log cho Chí | [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md) |
+| Hòa | Chạy trên Colab: môi trường, dữ liệu, baseline, nộp test, thí nghiệm thuộc tính, ví dụ định tính, train phân tích lượng dữ liệu | Không sửa code; gặp lỗi thì gửi log cho Chí | Từ 24/10: gộp vào [nhiem_vu_Chi.md](nhiem_vu_Chi.md) |
+| Doanh | Chạy trên Colab: tiền xử lý, độ bền và phục hồi ảnh, train phi bền với ảnh xấu | Không sửa code; gặp lỗi thì gửi log cho Chí | Từ 24/10: gộp vào [nhiem_vu_Chi.md](nhiem_vu_Chi.md) |
 
-**Cách phối hợp:**
-1. Chí đẩy code lên GitHub `chilk1307/XLA_SEARLE` và nhắn nhóm: "Xong C…, Hòa chạy được H…, Doanh chạy được D…".
+**Cách phối hợp** (đến 23/10; từ 24/10 Chí tự chạy mọi việc):
+1. Chí đẩy code lên GitHub (trước 24/10 là `chilk1307/XLA_SEARLE`, nay là `chilk1307/Chiss`) và nhắn nhóm: "Xong C…, Hòa chạy được H…, Doanh chạy được D…".
 2. Hòa và Doanh chạy đúng lệnh trong file nhiệm vụ của mình. Đầu mỗi phiên Colab đều lấy code mới nhất.
 3. Mỗi mã thí nghiệm chỉ do **một người** chạy, kết quả nằm trong thư mục riêng `results/<mã>/`, nên không ai ghi đè kết quả của ai.
 4. Cuối mỗi ngày, mỗi người gửi báo cáo ngắn vào nhóm (mẫu ở cuối mỗi file nhiệm vụ).

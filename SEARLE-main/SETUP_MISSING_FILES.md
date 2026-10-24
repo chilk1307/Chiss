@@ -72,8 +72,8 @@ File này ghim phiên bản hợp với môi trường Python 3.8 ở trên (ope
 Clone repo:
 
 ```sh
-git clone https://github.com/chilk1307/XLA_SEARLE.git
-cd XLA_SEARLE/SEARLE-main
+git clone https://github.com/chilk1307/Chiss.git
+cd Chiss/SEARLE-main
 ```
 
 Tạo sẵn các thư mục sẽ chứa file tải về (PowerShell):
@@ -408,8 +408,8 @@ Mở http://127.0.0.1:5050. Lần đầu CLIP ViT-B/32 được tải về (kho�
 Kế hoạch 2 tuần chạy thí nghiệm trên Colab. Quy ước chung:
 
 - **Drive:** thư mục `SEARLE` của nhóm luôn ở `/content/drive/MyDrive/SEARLE` (thêm lối tắt vào *Drive của tôi* nếu thư mục do người khác chia sẻ).
-- **Dữ liệu:** giải nén dataset ra `/content/data` (ổ cục bộ), **không** đọc trực tiếp từ Drive vì rất chậm. Đã đo: đọc ảnh từ Drive làm lượt đánh giá CIRCO chậm tới mức phải bỏ dở (`outputs/REPORT.md`).
-- **Code:** clone `https://github.com/chilk1307/XLA_SEARLE.git` vào `/content/XLA_SEARLE` ở đầu mỗi phiên, vì ổ cục bộ bị xoá khi runtime ngắt.
+- **Dữ liệu:** từ 24/10, `$DRIVE/datasets/` có 4 thư mục giải nén đủ ảnh (`CIRR`, `CIRCO`, `FashionIQ`, `ImageNet1K`). CIRR, CIRCO, FashionIQ được liên kết thẳng tới Drive. Đọc ảnh từ Drive rất chậm (lượt đánh giá CIRCO ngày 15/10 phải bỏ dở, `outputs/REPORT.md`), nên mọi lượt đánh giá dùng `--cache-dir`: ảnh gallery chỉ phải đọc một lần cho mỗi cấu hình tiền xử lý. ImageNet (train đọc cả 100.000 ảnh) vẫn được giải nén từ tar ra `/content/data`.
+- **Code:** clone `https://github.com/chilk1307/Chiss.git` vào `/content/XLA_SEARLE` ở đầu mỗi phiên, vì ổ cục bộ bị xoá khi runtime ngắt.
 - **Môi trường:** Colab có Python mới hơn 3.8. `colab/setup_env.sh` dựng một venv Python 3.8 từ `outputs/pip_freeze.txt` bằng `uv venv --python 3.8`, cài thêm `colab/requirements-xla.txt` và ghi `/content/env.sh` (`DRIVE`, `DATA`, `PY`, `RUNNER`).
-- **Bộ chạy:** mở `SEARLE-main/colab/SEARLE_runner.ipynb` trên Colab (*Tệp → Mở sổ tay → GitHub* → `chilk1307/XLA_SEARLE`), đặt `RUNNER` ở ô 0, chạy ô 0–5. Ô 4 gọi `colab/prepare_data.sh cirr circo fiq imagenet` (chọn tập cần dùng): giải nén `$DRIVE/datasets/<tập>.tar` ra `/content/data`, hoặc liên kết thư mục Drive kèm cảnh báo nếu chưa có `.tar`; đồng thời liên kết `data/{GPT_phrases,oti_pseudo_tokens,similar_concepts,phi_models}` tới `$DRIVE/outputs/`.
+- **Bộ chạy:** mở `SEARLE-main/colab/SEARLE_runner.ipynb` trên Colab (*Tệp → Mở sổ tay → GitHub* → `chilk1307/Chiss`), đặt `RUNNER` ở ô 0, chạy ô 0–5. Ô 4 gọi `colab/prepare_data.sh cirr circo fiq imagenet` (chọn tập cần dùng): liên kết `/content/data/<tập>` tới thư mục `$DRIVE/datasets/<tập>` (chỉ khi thiếu thư mục mới thử `<tập>.tar`), giải nén tar ImageNet ra đĩa cục bộ; đồng thời liên kết `data/{GPT_phrases,oti_pseudo_tokens,similar_concepts,phi_models}` tới `$DRIVE/outputs/`.
 - **Lưu kết quả lên Drive** ngay khi xong từng lượt chạy (`results/`, `cache/`, checkpoint), vì runtime có thể bị ngắt bất cứ lúc nào. Train phi dài nên có `--resume`.

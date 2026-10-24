@@ -152,3 +152,18 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 | File | Việc | Nội dung |
 |---|---|---|
 | `tools/vector_analysis.py` | C24 | `tokens` (E1.15a): độ lớn, từ thật gần nhất, độ giống nhau giữa các token, độ khớp giữa hai phương pháp (phi, SEARLE, OTI); `--snap-eval` đánh giá lại với token thay bằng từ gần nhất hoặc đưa về độ lớn của từ. `gap` (E1.15b): khoảng cách giữa tâm vector ảnh gallery và tâm từng kiểu vector truy vấn, thang điểm, z-score của ảnh đích, hình PCA. `drift` (E3.9): độ trôi vector ảnh, token, truy vấn của ảnh đã làm xấu / phục hồi / lọc tần số so với ảnh sạch; tương quan Spearman của độ trôi và của PSNR/SSIM với mức thiệt hại (điểm và thứ hạng ảnh đích, chỉ số); bảng "phục hồi có kéo vector về gần ảnh sạch không"; tách theo loại suy giảm với `mixed`. |
+
+## 24/10/2026: dữ liệu giải nén sẵn trên Drive, repo GitHub mới (C1, C2)
+
+### Kiểm chứng
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `prepare_data.sh cirr fiq circo imagenet` trên Drive giả lập: thư mục CIRR, FashionIQ có sẵn cạnh `CIRR.tar` bị cụt, `FashionIQ.tar` 0 byte; CIRCO chỉ có tar tốt; ImageNet có tar | CIRR, FashionIQ được liên kết tới thư mục, không mở tar hỏng; CIRCO giải nén từ tar; ImageNet giải nén ra đĩa cục bộ; chạy lần hai báo `already in` |
+
+### Sửa
+
+| File | Việc | Thay đổi |
+|---|---|---|
+| `colab/prepare_data.sh` | C1, C2 | CIRR, CIRCO, FashionIQ: ưu tiên thư mục giải nén sẵn `$DRIVE/datasets/<tập>/` (liên kết), chỉ thử `<tập>.tar` khi thiếu thư mục; xoá liên kết hoặc bản dở cũ trước khi chuẩn bị lại. ImageNet: vẫn giải nén `ILSVRC2012_img_test_v10102019.tar` ra đĩa cục bộ (train đọc 100.000 ảnh); không có tar thì liên kết `ImageNet1K/test` kèm cảnh báo. |
+| `colab/SEARLE_runner.ipynb`, `colab/gen_phrases.ipynb` | C2 | Clone từ `https://github.com/chilk1307/Chiss.git` (repo mới); runtime đã clone repo cũ được đổi `origin` trước khi lấy code. Thư mục trên Colab vẫn là `/content/XLA_SEARLE`. |

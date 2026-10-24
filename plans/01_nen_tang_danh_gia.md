@@ -3,7 +3,7 @@
 **Tóm tắt:** gom code về **một quy trình duy nhất** dùng chung cho tập val và file nộp test; kiểm tra dữ liệu; mỗi lần chạy tự ghi kết quả ra file; có khoảng tin cậy và điểm test chính thức. Sau đó thêm các baseline (CLIP và xử lý ảnh cổ điển) và phân tích lỗi để biết SEARLE mạnh, yếu ở đâu.
 
 **Thời gian:** Ngày 1–6; ví dụ định tính và bản đồ che khuất ở Ngày 11.
-**Người làm:** Chí viết code; Hòa chạy trên Colab. Việc theo ngày: [nhiem_vu_Chi.md](nhiem_vu_Chi.md), [nhiem_vu_Hoa.md](nhiem_vu_Hoa.md).
+**Người làm:** Chí viết code; Hòa chạy trên Colab (từ 24/10 Chí chạy). Việc theo ngày: [nhiem_vu_Chi.md](nhiem_vu_Chi.md).
 
 ## 1.1. Gộp code, sửa lỗi nuốt ngoại lệ (Chí: C3)
 

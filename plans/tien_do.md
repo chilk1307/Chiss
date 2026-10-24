@@ -1,18 +1,22 @@
 # Tiến độ dự án
 
-**Cập nhật:** 22/10/2026 (Ngày 6), đối chiếu với `results/` trên Drive và GitHub: Chí đã xong toàn bộ code cho Colab (C3, C5–C16, C21–C24). Doanh xong D1, D2 (21/10). Hòa dừng H5 ở E1.7a (19/10): SEARLE gốc trên CIRR ra R@1 25.59, mốc là 25.66, ngưỡng ±0,05. Từ đó H4–H18 và D3 trở đi chưa chạy. Dữ liệu trên Drive có lỗi: `FashionIQ.tar` 0 byte, `CIRR.tar` (6,0 GB) bị cụt. **Phần chạy Colab trễ 3–4 ngày so với lịch gốc** (theo lịch hôm nay Hòa ở H8, Doanh ở D7); mốc M1 (18/10) chưa đạt.
+**Thay đổi 24/10/2026:** từ nay **Chí làm một mình** mọi việc còn lại. Các mục Hòa (H, T) và Doanh (D) bên dưới giữ nguyên tên và mã, Chí chạy và đánh dấu. Ba file nhiệm vụ đã gộp vào [nhiem_vu_Chi.md](nhiem_vu_Chi.md) (lịch mới Ngày 8–14); lệnh train ở [nhiem_vu_train_Colab.md](nhiem_vu_train_Colab.md). Code chuyển sang GitHub `chilk1307/Chiss`. Dữ liệu: `datasets/` trên Drive đã có 4 thư mục giải nén đủ ảnh (`CIRR`, `CIRCO`, `FashionIQ`, `ImageNet1K`). `colab/prepare_data.sh` dùng thẳng các thư mục này, không đụng tới `CIRR.tar` (cụt) và `FashionIQ.tar` (0 byte) nữa; riêng ImageNet vẫn giải nén tar còn tốt.
+
+**Đối chiếu sáng 24/10/2026** (Ngày 8): đối chiếu lại Drive, **không có kết quả mới kể từ 21/10**. `results/` vẫn chỉ có `Hoa_H4_H5_20261019_…` và `Doanh_D2_20261021_COMPLETED`, `cache/` chỉ có cache CIRR val mặc định. Lỗi dữ liệu (C1) chưa sửa: hai file `.tar` và 4 thư mục `dryrun_2ep` trùng tên vẫn còn. Theo lịch hôm nay Hòa phải ở H10, Doanh ở D9, nên **phần Colab trễ khoảng 5–6 ngày**; M1, M3 đã quá hạn mà chưa đạt.
+
+**Bản trước:** 22/10/2026 (Ngày 6), đối chiếu với `results/` trên Drive và GitHub: Chí đã xong toàn bộ code cho Colab (C3, C5–C16, C21–C24). Doanh xong D1, D2 (21/10). Hòa dừng H5 ở E1.7a (19/10): SEARLE gốc trên CIRR ra R@1 25.59, mốc là 25.66, ngưỡng ±0,05. Từ đó H4–H18 và D3 trở đi chưa chạy. Dữ liệu trên Drive có lỗi: `FashionIQ.tar` 0 byte, `CIRR.tar` (6,0 GB) bị cụt. **Phần chạy Colab trễ 3–4 ngày so với lịch gốc** (theo lịch hôm nay Hòa ở H8, Doanh ở D7); mốc M1 (18/10) chưa đạt.
 **Cách dùng:** làm xong việc nào thì đổi `- [ ]` thành `- [x]`, ghi ngày xong ở cuối dòng, rồi cập nhật bảng tóm tắt bên dưới. Việc làm được một phần thì giữ `- [ ]` và ghi "(một phần: …)".
 
 ## Tóm tắt
 
 | Phần | Xong | Tổng | Tiến độ | Ghi chú |
 |---|---|---|---|---|
-| **Giai đoạn 0: tái lập SEARLE** (trước kế hoạch) | 13 | 15 | **87%** | Còn thiếu: điểm test từ server; FashionIQ chỉ có tập con |
-| Kế hoạch 2 tuần: Chí (C1–C24) | 17 | 24 | 71% | Xong toàn bộ code cần cho Colab (C3, C5–C16, C21–C24); C2, C4 chờ nghiệm thu trên Colab; C1 cần làm tay; còn C17–C20 (demo, cấu hình cuối, báo cáo, video) |
+| **Giai đoạn 0: tái lập SEARLE** (trước kế hoạch) | 13 | 15 | **87%** | Còn thiếu: điểm test từ server (H4); FashionIQ đầy đủ (dữ liệu đã đủ, chờ E1.7f) |
+| Kế hoạch 2 tuần: Chí (C1–C24) | 17 | 24 | 71% | Xong toàn bộ code cần cho Colab (C3, C5–C16, C21–C24); C2, C4 chờ nghiệm thu trên Colab; C1 chỉ còn dọn `dryrun_2ep`; còn C17–C20 (demo, cấu hình cuối, báo cáo, video) |
 | Kế hoạch 2 tuần: Hòa (H1–H18, T1–T2) | 1 | 20 | 5% | H3 xong; H1, H5 một phần; H5 dừng ở E1.7a (R@1 25.59, mốc 25.66) |
 | Kế hoạch 2 tuần: Doanh (D1–D17) | 2 | 17 | 12% | D1, D2 xong 21/10; D3 là việc kế tiếp |
 | **Kế hoạch 2 tuần: cả nhóm** | 20 | 61 | **33%** | Phần chạy trên Colab mới 3/37 việc: H5 đang chặn Hòa (và H4) |
-| Mốc kiểm tra M1–M5 | 0 | 5 | 0% | M1 (hạn 18/10) chưa đạt: chưa nộp test, H5 chưa qua |
+| Mốc kiểm tra M1–M5 | 0 | 5 | 0% | M1 (hạn 18/10), M2 (21/10), M3 (23/10) quá hạn chưa đạt; M4 hạn 27/10 |
 
 Trang tự đánh giá của demo (`/api/assessment`, chỉ tính phần tái lập): lõi **93%**, tính cả phần mở rộng (SEARLE-XL, SEARLE-OTI) **75%**.
 
@@ -24,21 +28,21 @@ Trang tự đánh giá của demo (`/api/assessment`, chỉ tính phần tái l�
 - [x] Train phi 100 epoch (`phi_B32`)
 - [x] Đánh giá CIRR val: R@1 25.47 (SEARLE gốc 25.66)
 - [x] Đánh giá CIRCO val: mAP@5 6.42 (SEARLE gốc 6.82, trùng số paper Table 10 nên gallery nhiều khả năng đủ ảnh; H2 kiểm tra lại)
-- [ ] Đánh giá FashionIQ val trên tập **đầy đủ** (một phần: đã chạy trên tập con, thiếu khoảng 2.431 ảnh)
+- [ ] Đánh giá FashionIQ val trên tập **đầy đủ** (một phần: đã chạy trên tập con, thiếu khoảng 2.431 ảnh; 24/10 thư mục `datasets/FashionIQ` trên Drive đã đủ ảnh, chạy lại ở E1.7f)
 - [x] File nộp test của phi_B32: CIRR (`phi_B32_cirr.json` + `subset_phi_B32_cirr.json`) và CIRCO (`phi_B32_circo.json`)
 - [ ] Điểm test từ server CIRR và CIRCO
 - [x] Demo web Flask (gallery, 3 chế độ truy vấn, trang tự đánh giá, tự nhận diện file nộp test)
-- [x] Repo GitHub `chilk1307/XLA_SEARLE`, loại file lớn khỏi git
+- [x] Repo GitHub `chilk1307/XLA_SEARLE`, loại file lớn khỏi git (từ 24/10 chuyển sang `chilk1307/Chiss`)
 - [x] `SETUP_MISSING_FILES.md` và link Google Drive cho file lớn
 - [x] Ghi chép tái lập: `outputs/REPORT.md`, `outputs/REPORT_results.md`
 - [x] Kế hoạch 2 tuần trong `plans/` (đã commit `70328e1`)
-- [x] Phân công Chí, Hòa, Doanh, mỗi người một file nhiệm vụ
+- [x] Phân công Chí, Hòa, Doanh, mỗi người một file nhiệm vụ (24/10 gộp thành một file vì Chí làm một mình)
 
 ## Kế hoạch 2 tuần: Chí (code, ý tưởng)
 
 Chi tiết: [nhiem_vu_Chi.md](nhiem_vu_Chi.md).
 
-- [ ] **C1** (Ngày 1) Chia sẻ Drive cho Hòa, Doanh; xác nhận vị trí dữ liệu và dung lượng Drive (một phần: Hòa và Doanh đã đọc/ghi được thư mục `SEARLE` trên Colab; còn lại: `datasets/FashionIQ.tar` 0 byte và `datasets/CIRR.tar` bị cụt phải đóng gói lại. Hòa phải dùng thư mục giải nén sẵn trên Drive, Doanh tự tạo `CIRR_D2_val_20261021.zip` (chỉ val). Doanh đọc `outputs` từ một bản sao tên `SEARLE (1)`; `outputs/phi_models/` có 4 thư mục `dryrun_2ep` trùng tên cần dọn)
+- [ ] **C1** (Ngày 1) Chia sẻ Drive cho Hòa, Doanh; xác nhận vị trí dữ liệu và dung lượng Drive (một phần: Hòa và Doanh đã đọc/ghi được thư mục `SEARLE` trên Colab; còn lại: `datasets/FashionIQ.tar` 0 byte và `datasets/CIRR.tar` bị cụt phải đóng gói lại. Hòa phải dùng thư mục giải nén sẵn trên Drive, Doanh tự tạo `CIRR_D2_val_20261021.zip` (chỉ val). Doanh đọc `outputs` từ một bản sao tên `SEARLE (1)`; `outputs/phi_models/` có 4 thư mục `dryrun_2ep` trùng tên cần dọn. 24/10: dữ liệu xong: 4 thư mục giải nén đủ ảnh, `prepare_data.sh` dùng thư mục thay cho tar; chỉ còn dọn `dryrun_2ep`)
 - [ ] **C2** (Ngày 1) Bộ chạy Colab: `setup_env.sh`, `prepare_data.sh`, `requirements-xla.txt`, `SEARLE_runner.ipynb` (một phần: notebook đã chạy được trên runtime mới (Hòa 19/10 trên T4, Doanh 21/10 trên A100); tiêu chí "R@1 = 25.66" chưa đạt: ra 25.59 trên T4, xem H5)
 - [x] **C3** (Ngày 1) Gộp `datasets.py`, sửa nuốt lỗi, xử lý batch rỗng, đưa file nhỏ của `outputs/` vào git — 17/10
   - [x] Gộp bản `datasets.py` của repo và bản vá Colab
@@ -70,7 +74,7 @@ Chi tiết: [nhiem_vu_Chi.md](nhiem_vu_Chi.md).
 
 ## Kế hoạch 2 tuần: Hòa (Colab)
 
-Chi tiết: [nhiem_vu_Hoa.md](nhiem_vu_Hoa.md).
+Từ 24/10 Chí chạy. Chi tiết: [nhiem_vu_Chi.md](nhiem_vu_Chi.md) mục 5, 6, 8; lượt train T1, T2, H16 ở [nhiem_vu_train_Colab.md](nhiem_vu_train_Colab.md).
 
 - [ ] **H1** (Ngày 1) Dựng Colab, đóng gói dữ liệu, chạy thử SEARLE gốc trên CIRR val (một phần: Colab chạy được, cache CIRR val đã có trên Drive; đóng gói `.tar` hỏng nên dùng thư mục giải nén sẵn)
 - [ ] **H2** (Ngày 1) Kiểm tra dữ liệu nhanh CIRR, CIRCO, FashionIQ (E1.2)
@@ -95,7 +99,7 @@ Chi tiết: [nhiem_vu_Hoa.md](nhiem_vu_Hoa.md).
 
 ## Kế hoạch 2 tuần: Doanh (Colab)
 
-Chi tiết: [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md).
+Từ 24/10 Chí chạy. Chi tiết: [nhiem_vu_Chi.md](nhiem_vu_Chi.md) mục 7, 8; lượt train D7–D10, D17 ở [nhiem_vu_train_Colab.md](nhiem_vu_train_Colab.md).
 
 - [x] **D1** (Ngày 1) Dựng Colab, giải nén ImageNet, kiểm tra file trên Drive (ImageNet đủ 100.000 ảnh; CIRR val đủ 2.297 ảnh) — 21/10
 - [x] **D2** (Ngày 2) Chạy thử train 2 epoch, đo thời gian (A100: epoch 1 R@1 22.24 so với mốc 22.05, epoch 2 22.79 so với 22.53; khoảng 2,4 phút mỗi epoch nên 100 epoch mất khoảng 4 giờ; kết quả ở `results/Doanh_D2_20261021_COMPLETED`) — 21/10
@@ -125,12 +129,11 @@ Chi tiết: [nhiem_vu_Doanh.md](nhiem_vu_Doanh.md).
 
 ## Việc tiếp theo
 
-1. **Gỡ chặn H5 (việc gấp nhất, Chí quyết định).** Code mới đã trùng từng bit code gốc trên dữ liệu giả lập. Nguyên nhân nhiều khả năng là phần cứng: mốc 25.66 đo trên A100 với torch 1.11, bản này mặc định tính TF32; Hòa chạy trên T4, tính FP32 đầy đủ. Chỉ một trong hai phép thử sau là đủ để kết luận:
-   - Hòa chạy lại E1.7a trên **A100** (khoảng 3 phút): ra 25.66 thì C4 đạt;
-   - hoặc chạy **code gốc** (`git checkout 70328e1`) trên **T4**: ra 25.59 thì code mới không làm lệch số.
-   Sau đó ghi rõ GPU vào bảng mốc của H5 và chạy tiếp E1.7b–f, H4.
-2. **Chí: sửa dữ liệu trên Drive (C1).** Đóng gói lại `CIRR.tar` (đủ train, dev, test1) và `FashionIQ.tar`, hoặc sửa `colab/prepare_data.sh` để đọc thẳng các thư mục giải nén sẵn. Dọn các thư mục `dryrun_2ep` trùng tên trong `outputs/phi_models/`. Nhắc Doanh dùng lối tắt `SEARLE` thay cho bản sao `SEARLE (1)`.
-3. **Doanh: D3 (E4.1, E4.2), D5, D6 làm được ngay.** Cache CIRR val của Hòa đã có trên Drive, nhưng chỉ dùng lại được với cấu hình mặc định (targetpad 1.25, bicubic). Các cấu hình khác của E4.1, E4.2 phải trích đặc trưng lại.
-4. Trước E3.3 (Ngày 9), Chí hiệu chỉnh lại ngưỡng phục hồi tự động trên ảnh CIRR train ở Colab rồi commit `src/restore_rules.json`:
+Lịch đầy đủ Ngày 8–14 ở [nhiem_vu_Chi.md](nhiem_vu_Chi.md) mục 2. Phiên Colab đầu tiên (A100):
+
+1. **Gỡ chặn H5 (việc gấp nhất).** Code mới đã trùng từng bit code gốc trên dữ liệu giả lập. Nguyên nhân nhiều khả năng là phần cứng: mốc 25.66 đo trên A100 với torch 1.11, bản này mặc định tính TF32; Hòa chạy trên T4, tính FP32 đầy đủ. Chạy lại E1.7a trên **A100** với cache mới `$DRIVE/cache_A100` (khoảng 3 phút): ra 25.66 thì C2, C4 đạt. Vẫn ra 25.59 thì chạy code gốc `git checkout 70328e1` trên cùng A100 để so. Sau đó ghi GPU vào H5, chạy tiếp E1.7b–f và H4.
+2. **Train nền ngay trong phiên đó:** T1 (`phi_scale_s0`) và D7 (đặc trưng ảnh xấu shard s0), lệnh ở [nhiem_vu_train_Colab.md](nhiem_vu_train_Colab.md).
+3. **Chạy song song khi train:** H2/H7 kiểm tra dữ liệu (FashionIQ phải không còn thiếu ảnh), H4 sinh file test SEARLE gốc rồi nộp server, H9 E2.0 (không cần GPU) để chốt mốc M3. Số sơ bộ (FashionIQ 90,7%, CIRR 36,3%, CIRCO 25,5%) đã vượt ngưỡng 10%.
+4. **C1:** xoá 4 thư mục `outputs/phi_models/dryrun_2ep` trùng tên trên Drive.
+5. Trước E3.3 (Ngày 11): hiệu chỉnh ngưỡng phục hồi tự động trên ảnh CIRR train rồi commit `src/restore_rules.json`:
    `$PY tools/calibrate_restore_rules.py --images-dir $DATA/CIRR/train --n 300 --out src/restore_rules.json --report-dir $DRIVE/results/E3.3-calibration`
-5. Họp mốc M3 dự kiến 23/10 sẽ thiếu E2.0, E2.2 vì Hòa chưa tới H9. E2.0 chỉ đọc câu mô tả, không cần GPU, nên Hòa chạy được ngay song song với việc gỡ H5. Số sơ bộ của Chí (FashionIQ 90,7%, CIRR 36,3%, CIRCO 25,5%) đã vượt ngưỡng 10%.
