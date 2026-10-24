@@ -34,6 +34,7 @@ sys.path.insert(0, str(REPO_DIR))
 from src.data_utils import targetpad_transform  # noqa: E402
 from src.encode_with_pseudo_tokens import encode_with_pseudo_tokens  # noqa: E402
 from src.phi import Phi  # noqa: E402
+import extras  # noqa: E402  (C17: attribute re-ranking, degradation/restoration, CBIR, occlusion map)
 
 CLIP_NAME = "ViT-B/32"
 # Ưu tiên bản tái lập đầy đủ (OTI 100k ảnh) trong outputs/, nếu không có thì dùng data/ của repo
@@ -240,6 +241,41 @@ class Engine:
             "neighbors": self.pseudo_word_neighbors(token.cpu()),
             "ms": int((time.time() - t0) * 1000), "gallery_size": len(self.items),
         }
+
+    @torch.no_grad()
+    def query_sims(self, ref: Image.Image, caption: str, mode: str):
+        """
+        Similarity of the query with every gallery image (C17). Modes: composed / image / text (as search), plus
+        sum (CLIP image feature + caption feature) and cbir (classical colour/LBP/HOG/Gabor, demo/extras.py).
+        Returns (sims, prompt, pseudo token or None).
+        """
+        caption = caption.replace("$", " ").strip()
+        if mode == "cbir":
+            return extras.cbir_sims(self, ref), "(CBIR cổ điển: histogram màu, LBP, HOG, Gabor)", None
+        with self.lock:
+            x = self.preprocess(ref.convert("RGB")).unsqueeze(0).to(self.device)
+            img_f = self.clip.encode_image(x).float()
+            token = self.phi(img_f)
+            if mode in ("text", "sum"):
+                prompt = caption
+                text_f = self.clip.encode_text(clip.tokenize([prompt], truncate=True).to(self.device)).float()
+                if mode == "sum":
+                    text_f = F.normalize(img_f, dim=-1) + F.normalize(text_f, dim=-1)
+                    prompt = f"ảnh + \"{caption}\" (cộng vector)"
+            else:
+                prompt = "a photo of $" if mode == "image" else f"a photo of $ that {caption}"
+                tokens = clip.tokenize([prompt], context_length=77, truncate=True).to(self.device)
+                text_f = encode_with_pseudo_tokens(self.clip, tokens, token).float()
+        q = F.normalize(text_f, dim=-1).cpu()
+        return (q @ self.feats.T).squeeze(0), prompt, token.cpu()
+
+    def top_results(self, sims: torch.Tensor, topk: int, exclude_id: str | None) -> list[dict]:
+        sims = sims.clone()
+        if exclude_id and exclude_id in self.id2idx:
+            sims[self.id2idx[exclude_id]] = -2
+        vals, idx = sims.topk(min(topk, len(self.items)))
+        return [{"id": self.items[i]["id"], "name": self.items[i]["name"], "score": round(float(v), 4)}
+                for v, i in zip(vals.tolist(), idx.tolist())]
 
     def pseudo_word_neighbors(self, token: torch.Tensor, n: int = 8) -> list[dict]:
         """Các từ CLIP gần nhất với pseudo-word S* (cho thấy ảnh được 'đảo ngược' thành chữ gì)."""
@@ -576,6 +612,134 @@ def search():
     except Exception:  # noqa: BLE001
         return jsonify({"error": "Không đọc được ảnh tham chiếu."}), 400
     return jsonify(engine.search(ref, caption, mode, topk, exclude))
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# C17: extended search (attributes, degraded query -> restoration, more methods), comparison, "Why?" map
+# ----------------------------------------------------------------------------------------------------------------------
+MODES_EXT = ("composed", "image", "text", "sum", "cbir")
+
+
+def _reference_from_request():
+    """(PIL image, id to exclude) from the form fields ref (file) or ref_id (gallery image)"""
+    ref_id = request.form.get("ref_id")
+    if "ref" in request.files and request.files["ref"].filename:
+        ref = Image.open(request.files["ref"].stream)
+        ref.load()
+        return ref.convert("RGB"), None
+    if ref_id and ref_id in engine.id2idx:
+        ref = Image.open(engine.items[engine.id2idx[ref_id]]["path"])
+        ref.load()
+        return ref.convert("RGB"), ref_id
+    raise ValueError("Hãy chọn ảnh tham chiếu.")
+
+
+def _check_ready():
+    if engine.state != "ready":
+        return jsonify({"error": "Mô hình chưa sẵn sàng"}), 503
+    if not engine.items:
+        return jsonify({"error": "Thư viện ảnh đang trống - hãy thêm ảnh trước."}), 400
+    return None
+
+
+@app.post("/api/search2")
+def search2():
+    bad = _check_ready()
+    if bad:
+        return bad
+    f = request.form
+    mode = f.get("mode", "composed")
+    if mode not in MODES_EXT:
+        return jsonify({"error": "mode không hợp lệ"}), 400
+    caption = f.get("caption", "").strip()
+    if mode not in ("image", "cbir") and not caption:
+        return jsonify({"error": "Hãy nhập mô tả thay đổi (caption)."}), 400
+    topk = max(1, min(int(f.get("topk", 12)), 60))
+    try:
+        ref, exclude = _reference_from_request()
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"error": str(e) or "Không đọc được ảnh tham chiếu."}), 400
+    t0 = time.time()
+    out = {"mode": mode, "gallery_size": len(engine.items)}
+    rgb = np.asarray(ref)
+
+    # 2. degraded query -> restoration
+    degrade_spec, restore_mode = f.get("degrade", "none"), f.get("restore", "none")
+    query_rgb = rgb
+    if degrade_spec != "none" or restore_mode != "none":
+        try:
+            dr = extras.degrade_and_restore(rgb, degrade_spec, restore_mode)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        sims_d, _, _ = engine.query_sims(Image.fromarray(dr["degraded"]), caption, mode)
+        out["restoration"] = {
+            "degradation": degrade_spec, "mode": restore_mode, "method": dr["method"], "features": dr["features"],
+            "original": extras.data_url(rgb), "degraded": extras.data_url(dr["degraded"]),
+            "restored": extras.data_url(dr["restored"]),
+            "psnr_degraded": round(extras.psnr(rgb, dr["degraded"]), 2),
+            "psnr_restored": round(extras.psnr(rgb, dr["restored"]), 2),
+            "results_degraded": engine.top_results(sims_d, topk, exclude),
+        }
+        query_rgb = dr["restored"]
+        sims_c, _, _ = engine.query_sims(ref, caption, mode)
+        out["restoration"]["results_clean"] = engine.top_results(sims_c, topk, exclude)
+
+    sims, prompt, token = engine.query_sims(Image.fromarray(query_rgb), caption, mode)
+    out["prompt"] = prompt
+    out["neighbors"] = engine.pseudo_word_neighbors(token) if token is not None and mode != "text" else []
+
+    # 1. attribute re-ranking
+    if f.get("attr") == "1" and caption:
+        weight = float(f.get("attr_weight", 0.3))
+        rerank_k = max(topk, min(int(f.get("attr_k", 50)), 200))
+        s = sims.clone()
+        if exclude and exclude in engine.id2idx:
+            s[engine.id2idx[exclude]] = -2
+        out["attributes"] = extras.attribute_rerank(engine, s, query_rgb, caption, topk, weight, rerank_k)
+        out["results"] = out["attributes"]["results"]
+    else:
+        out["results"] = engine.top_results(sims, topk, exclude)
+    out["ms"] = int((time.time() - t0) * 1000)
+    return jsonify(out)
+
+
+@app.post("/api/compare")
+def compare():
+    bad = _check_ready()
+    if bad:
+        return bad
+    caption = request.form.get("caption", "").strip()
+    topk = max(1, min(int(request.form.get("topk", 6)), 24))
+    try:
+        ref, exclude = _reference_from_request()
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"error": str(e)}), 400
+    rows = []
+    for mode in MODES_EXT:
+        if mode in ("text", "sum", "composed") and not caption:
+            continue
+        t0 = time.time()
+        sims, prompt, _ = engine.query_sims(ref, caption, mode)
+        rows.append({"mode": mode, "prompt": prompt, "ms": int((time.time() - t0) * 1000),
+                     "results": engine.top_results(sims, topk, exclude)})
+    return jsonify({"rows": rows})
+
+
+@app.post("/api/explain")
+def explain_result():
+    bad = _check_ready()
+    if bad:
+        return bad
+    target = request.form.get("target_id", "")
+    if target not in engine.id2idx:
+        return jsonify({"error": "Ảnh kết quả không có trong thư viện"}), 400
+    try:
+        ref, _ = _reference_from_request()
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"error": str(e)}), 400
+    out = extras.occlusion_map(engine, ref, request.form.get("caption", ""), target)
+    out["mask"], out["mask_kind"] = extras.mask_overlay(engine, target)
+    return jsonify(out)
 
 
 if __name__ == "__main__":

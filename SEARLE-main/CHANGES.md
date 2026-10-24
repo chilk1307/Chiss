@@ -167,3 +167,23 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 |---|---|---|
 | `colab/prepare_data.sh` | C1, C2 | CIRR, CIRCO, FashionIQ: ưu tiên thư mục giải nén sẵn `$DRIVE/datasets/<tập>/` (liên kết), chỉ thử `<tập>.tar` khi thiếu thư mục; xoá liên kết hoặc bản dở cũ trước khi chuẩn bị lại. ImageNet: vẫn giải nén `ILSVRC2012_img_test_v10102019.tar` ra đĩa cục bộ (train đọc 100.000 ảnh); không có tar thì liên kết `ImageNet1K/test` kèm cảnh báo. |
 | `colab/SEARLE_runner.ipynb`, `colab/gen_phrases.ipynb` | C2 | Clone từ `https://github.com/chilk1307/Chiss.git` (repo mới); runtime đã clone repo cũ được đổi `origin` trước khi lấy code. Thư mục trên Colab vẫn là `/content/XLA_SEARLE`. |
+
+## 24/10/2026 (tiếp): demo có các tab mới (C17)
+
+### Kiểm chứng
+
+- `python -m py_compile demo/app.py demo/extras.py`, `node --check` phần script của `demo/static/index.html`.
+- Chạy thử trên Colab A100 với gallery CIRR val: xem mục C17 trong `plans/nhat_ky_thi_nghiem.md`.
+
+### Sửa
+
+| File | Việc | Thay đổi |
+|---|---|---|
+| `demo/app.py` | C17 | Thêm `Engine.query_sims` (các chế độ `composed`, `image`, `text` như cũ, thêm `sum` và `cbir`) và `Engine.top_results`; thêm API `/api/search2` (kèm kiểm chứng thuộc tính, ảnh xấu → phục hồi), `/api/compare` (mọi phương pháp cạnh nhau), `/api/explain` (bản đồ che khuất, mặt nạ đối tượng). API cũ `/api/search` giữ nguyên. |
+| `demo/static/index.html` | C17 | Chế độ Tổng, CBIR; hộp “Kiểm chứng thuộc tính” (bật, trọng số, top-K; mỗi kết quả có thứ hạng CLIP, độ dịch hạng, ô màu chủ đạo, L*, độ rực, lời giải thích); hộp “Ảnh xấu → phục hồi” (ảnh gốc / xấu / phục hồi kèm PSNR, đặc trưng ước lượng, kết quả trước và sau); nút “So sánh”; nút “Vì sao?” trên mỗi kết quả. Tìm kiếm dùng `/api/search2`. |
+
+### Thêm
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `demo/extras.py` | C17 | Xếp hạng lại bằng `attributes/` (đo thuộc tính chỉ cho top-K, lưu `demo/cache/attributes.pt`), suy giảm và phục hồi bằng `degradations.py`, `degradation_estimation.py`, `restorations.py`, CBIR bằng `cbir.py` (đặc trưng lưu `demo/cache/cbir.pt`), bản đồ che khuất (ô 32, bước 16) và ảnh mặt nạ đối tượng. |

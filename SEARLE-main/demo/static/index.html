@@ -162,6 +162,21 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 ul.notes { margin: 8px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 13.5px; }
 ul.notes li + li { margin-top: 4px; }
 [hidden] { display: none !important; }
+/* C17 additions */
+details.field summary { cursor: pointer; font-size: 13.5px; }
+.grid.small { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.res { display: flex; flex-direction: column; gap: 4px; }
+.res .meta { font-size: 12px; color: var(--ink-2); line-height: 1.35; }
+.res .sw { display: flex; gap: 3px; align-items: center; }
+.res .sw i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); display: inline-block; }
+.mv { font-weight: 700; font-variant-numeric: tabular-nums; }
+.mv.up { color: var(--good); } .mv.down { color: var(--bad); }
+.whybtn { font-size: 12px; padding: 2px 8px; align-self: flex-start; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.trio figure { margin: 0; } .trio img { width: 100%; border-radius: 8px; display: block; border: 1px solid var(--border); }
+.trio figcaption { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
+.cmprow + .cmprow { margin-top: 12px; }
+.cmprow h3 { margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -206,12 +221,39 @@ ul.notes li + li { margin-top: 4px; }
               <button data-mode="composed" aria-pressed="true" title="SEARLE: ảnh → pseudo-word S*, ghép với caption">Kết hợp (SEARLE)</button>
               <button data-mode="image" aria-pressed="false" title="Chỉ dùng ảnh (bỏ caption)">Chỉ ảnh</button>
               <button data-mode="text" aria-pressed="false" title="Chỉ dùng caption (bỏ ảnh)">Chỉ chữ</button>
+              <button data-mode="sum" aria-pressed="false" title="Cộng vector CLIP của ảnh và của caption">Tổng</button>
+              <button data-mode="cbir" aria-pressed="false" title="CBIR cổ điển: histogram màu, LBP, HOG, Gabor (bỏ caption)">CBIR</button>
             </div>
           </div>
+
+          <details class="field" id="attrBox">
+            <summary><b>Kiểm chứng thuộc tính</b> <span class="muted">(xếp hạng lại bằng xử lý ảnh)</span></summary>
+            <label class="row" style="margin-top:8px;font-weight:400"><input type="checkbox" id="attrOn"> Bật xếp hạng lại top-K theo màu, độ sáng, độ rực, hoa văn, mức phóng to trong câu mô tả</label>
+            <div class="row" style="margin-top:6px">
+              <label for="attrW" style="margin:0;font-weight:400">Trọng số w</label>
+              <select id="attrW"><option>0.1</option><option>0.2</option><option selected>0.3</option><option>0.5</option><option>1.0</option></select>
+              <label for="attrK" style="margin:0;font-weight:400">top-K</label>
+              <select id="attrK"><option>20</option><option selected>50</option><option>100</option></select>
+            </div>
+          </details>
+
+          <details class="field" id="degBox">
+            <summary><b>Ảnh xấu → phục hồi</b> <span class="muted">(độ bền với ảnh truy vấn kém)</span></summary>
+            <div class="row" style="margin-top:8px">
+              <label for="degSel" style="margin:0;font-weight:400">Làm xấu</label>
+              <select id="degSel" class="grow"></select>
+            </div>
+            <div class="row" style="margin-top:6px">
+              <label for="resSel" style="margin:0;font-weight:400">Phục hồi</label>
+              <select id="resSel" class="grow"></select>
+            </div>
+            <div class="muted" style="margin-top:4px">“Tự động” ước lượng loại suy giảm (nhiễu, mờ, khối JPEG, thiếu sáng, ám màu) rồi chọn phép phục hồi theo luật.</div>
+          </details>
           <div class="field row">
             <label for="topk" style="margin:0">Số kết quả</label>
             <select id="topk"><option>6</option><option selected>12</option><option>24</option><option>48</option></select>
             <span class="grow"></span>
+            <button class="btn" id="compareBtn" title="Chạy mọi phương pháp, xem kết quả cạnh nhau">So sánh</button>
             <button class="btn primary" id="searchBtn">Tìm kiếm</button>
           </div>
           <div class="err" id="searchErr" hidden></div>
@@ -240,6 +282,27 @@ ul.notes li + li { margin-top: 4px; }
       </div>
 
       <div>
+        <div class="card" id="restCard" hidden>
+          <h2>Ảnh xấu → phục hồi <span class="muted" id="restMeta"></span></h2>
+          <div class="trio" id="restImgs"></div>
+          <div class="muted" id="restFeats" style="margin-top:6px"></div>
+          <h3 style="margin-top:12px">Kết quả với ảnh gốc</h3><div class="grid small" id="restClean"></div>
+          <h3 style="margin-top:12px">Kết quả với ảnh xấu (không phục hồi)</h3><div class="grid small" id="restBad"></div>
+          <div class="muted" style="margin-top:6px">Kết quả với ảnh đã phục hồi ở thẻ “Kết quả” bên dưới.</div>
+        </div>
+
+        <div class="card" id="cmpCard" hidden>
+          <h2>So sánh phương pháp</h2>
+          <div id="cmpRows"></div>
+        </div>
+
+        <div class="card" id="whyCard" hidden>
+          <h2>Vì sao? <span class="muted" id="whyMeta"></span></h2>
+          <div class="trio" id="whyImgs"></div>
+          <div class="muted" style="margin-top:6px">Bản đồ che khuất: mỗi ô 32×32 của ảnh tham chiếu (đã tiền xử lý) bị thay bằng màu xám,
+            rồi tính lại điểm với ảnh kết quả. Đỏ = vùng mà khi che đi thì điểm giảm nhiều nhất. Mặt nạ đối tượng là vùng mà bộ đo thuộc tính dùng.</div>
+        </div>
+
         <div class="card" id="resultsCard" hidden>
           <h2>Kết quả <span class="muted" id="resMeta"></span></h2>
           <div class="query-box">
@@ -249,6 +312,11 @@ ul.notes li + li { margin-top: 4px; }
           <div id="neighbors" style="margin-top:10px" hidden>
             <div class="muted">Pseudo-word <b>S*</b> (ảnh tham chiếu → từ) gần nhất với:</div>
             <div class="chips" id="neighChips"></div>
+          </div>
+          <div id="attrInfo" style="margin-top:10px" hidden>
+            <div class="muted">Ràng buộc tách từ câu mô tả:</div>
+            <div class="chips" id="attrChips"></div>
+            <div class="muted" id="attrNote" style="margin-top:4px"></div>
           </div>
           <div class="grid" id="resGrid" style="margin-top:12px"></div>
           <div class="muted" style="margin-top:8px">Bấm một ảnh kết quả để dùng nó làm ảnh tham chiếu mới.
@@ -480,23 +548,102 @@ $$('#modeSeg button').forEach(b => b.onclick = () => {
   $$('#modeSeg button').forEach(x => x.setAttribute('aria-pressed', x === b));
 });
 
-async function runSearch() {
-  const err = $('#searchErr'); err.hidden = true;
-  if (!state.ready) { err.hidden = false; err.textContent = 'Mô hình chưa sẵn sàng, vui lòng đợi.'; return; }
-  if (!state.ref) { err.hidden = false; err.textContent = 'Hãy chọn ảnh tham chiếu (tải lên hoặc bấm ảnh trong thư viện).'; return; }
+/* C17: degradation / restoration choices */
+function H(tag, cls, parent) { const n = document.createElement(tag); n.className = cls; if (parent) parent.appendChild(n); return n; }
+const DEGS = [['gauss_noise', 'Nhiễu Gauss'], ['salt_pepper', 'Nhiễu muối tiêu'], ['gauss_blur', 'Mờ Gauss'],
+  ['motion_blur', 'Mờ chuyển động'], ['jpeg', 'Nén JPEG'], ['low_light', 'Thiếu sáng'], ['low_res', 'Độ phân giải thấp'],
+  ['color_cast', 'Ám màu']];
+$('#degSel').innerHTML = '<option value="none">Không (ảnh gốc)</option>' +
+  DEGS.flatMap(([k, n]) => [1, 2].map(l => `<option value="${k}:${l}">${n} · mức ${l}</option>`)).join('');
+const RESTS = ['median', 'gaussian', 'bilateral', 'nlm', 'wiener', 'richardson_lucy', 'unsharp', 'histeq', 'clahe',
+  'gamma', 'retinex', 'gray_world', 'white_patch', 'deblock'];
+$('#resSel').innerHTML = '<option value="none">Không phục hồi</option><option value="auto" selected>Tự động (ước lượng + luật)</option>' +
+  RESTS.map(m => `<option value="${m}">${m}</option>`).join('');
+
+function queryForm(extra = {}) {
   const fd = new FormData();
   if (state.ref.type === 'file') fd.append('ref', state.ref.file); else fd.append('ref_id', state.ref.id);
   fd.append('caption', $('#caption').value);
-  fd.append('mode', state.mode);
-  fd.append('topk', $('#topk').value);
+  Object.entries(extra).forEach(([k, v]) => fd.append(k, v));
+  return fd;
+}
+function checkQuery() {
+  const err = $('#searchErr'); err.hidden = true;
+  if (!state.ready) { err.hidden = false; err.textContent = 'Mô hình chưa sẵn sàng, vui lòng đợi.'; return false; }
+  if (!state.ref) { err.hidden = false; err.textContent = 'Hãy chọn ảnh tham chiếu (tải lên hoặc bấm ảnh trong thư viện).'; return false; }
+  return true;
+}
+
+async function runSearch() {
+  if (!checkQuery()) return;
+  const err = $('#searchErr');
+  const deg = $('#degBox').open ? $('#degSel').value : 'none';
+  const rest = $('#degBox').open ? $('#resSel').value : 'none';
+  const fd = queryForm({ mode: state.mode, topk: $('#topk').value, degrade: deg, restore: deg === 'none' && rest === 'auto' ? 'none' : rest,
+    attr: $('#attrOn').checked ? '1' : '0', attr_weight: $('#attrW').value, attr_k: $('#attrK').value });
   const btn = $('#searchBtn'); btn.disabled = true; btn.textContent = 'Đang tìm…';
+  state.lastCaption = $('#caption').value;
   try {
-    const r = await api('/api/search', { method: 'POST', body: fd });
+    const r = await api('/api/search2', { method: 'POST', body: fd });
+    renderRestoration(r.restoration);
     renderResults(r);
   } catch (e) { err.hidden = false; err.textContent = e.message; }
   btn.disabled = false; btn.textContent = 'Tìm kiếm';
 }
 $('#searchBtn').onclick = runSearch;
+
+function smallGrid(el, items) {
+  el.innerHTML = '';
+  items.forEach((it, i) => el.appendChild(tile(it, { rank: i + 1, score: it.score,
+    onclick: () => { setRefFromGallery(it); window.scrollTo({ top: 0, behavior: 'smooth' }); } })));
+}
+function renderRestoration(rs) {
+  $('#restCard').hidden = !rs;
+  if (!rs) return;
+  $('#restMeta').textContent = `· ${rs.degradation} → ${rs.method}`;
+  $('#restImgs').innerHTML = [
+    ['original', 'Ảnh gốc'], ['degraded', `Ảnh xấu · PSNR ${rs.psnr_degraded} dB`], ['restored', `Phục hồi (${rs.method}) · PSNR ${rs.psnr_restored} dB`]
+  ].map(([k, t]) => `<figure><img alt="${t}" src="${rs[k]}"><figcaption>${t}</figcaption></figure>`).join('');
+  const f = rs.features;
+  $('#restFeats').textContent = `Đặc trưng ước lượng: σ nhiễu ${f.noise_sigma}, tỉ lệ xung ${f.impulse_ratio}, độ khối ${f.blockiness}, ` +
+    `phương sai Laplace ${f.laplacian_var}, L* trung bình ${f.l_mean}, ám màu ${f.cast}`;
+  smallGrid($('#restClean'), rs.results_clean.slice(0, 6));
+  smallGrid($('#restBad'), rs.results_degraded.slice(0, 6));
+}
+
+async function runCompare() {
+  if (!checkQuery()) return;
+  const btn = $('#compareBtn'); btn.disabled = true; btn.textContent = 'Đang so…';
+  try {
+    const r = await api('/api/compare', { method: 'POST', body: queryForm({ topk: 6 }) });
+    const names = { composed: 'SEARLE (ảnh + chữ)', image: 'Chỉ ảnh', text: 'Chỉ chữ', sum: 'Tổng vector CLIP', cbir: 'CBIR cổ điển' };
+    const box = $('#cmpRows'); box.innerHTML = '';
+    r.rows.forEach(row => {
+      const d = H('div', 'cmprow', box);
+      d.innerHTML = `<h3>${names[row.mode]} <span class="muted">· ${row.ms} ms</span></h3>`;
+      smallGrid(H('div', 'grid small', d), row.results);
+    });
+    $('#cmpCard').hidden = false;
+    $('#cmpCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) { $('#searchErr').hidden = false; $('#searchErr').textContent = e.message; }
+  btn.disabled = false; btn.textContent = 'So sánh';
+}
+$('#compareBtn').onclick = runCompare;
+
+async function explainResult(it, btn) {
+  if (!state.ref) return;
+  btn.disabled = true; btn.textContent = 'Đang tính…';
+  try {
+    const r = await api('/api/explain', { method: 'POST', body: queryForm({ target_id: it.id, caption: state.lastCaption || '' }) });
+    $('#whyMeta').textContent = `· ${it.name} · điểm ${r.base_score}, giảm tối đa ${r.max_drop}`;
+    $('#whyImgs').innerHTML = `<figure><img alt="Bản đồ che khuất" src="${r.overlay}"><figcaption>Vùng ảnh tham chiếu quyết định kết quả</figcaption></figure>` +
+      `<figure><img alt="Ảnh kết quả" src="/api/img/${it.id}?w=448"><figcaption>Ảnh kết quả</figcaption></figure>` +
+      `<figure><img alt="Mặt nạ đối tượng" src="${r.mask}"><figcaption>Mặt nạ đối tượng (${r.mask_kind})</figcaption></figure>`;
+    $('#whyCard').hidden = false;
+    $('#whyCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) { alert(e.message); }
+  btn.disabled = false; btn.textContent = 'Vì sao?';
+}
 $('#caption').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runSearch(); });
 
 function renderResults(r) {
@@ -507,11 +654,34 @@ function renderResults(r) {
   nb.hidden = r.mode === 'text' || !r.neighbors.length;
   $('#neighChips').innerHTML = r.neighbors.map(n =>
     `<span class="chip static" title="cosine ${n.sim}">${esc(n.word)}</span>`).join('');
+  const at = r.attributes;
+  $('#attrInfo').hidden = !at;
+  if (at) {
+    $('#attrChips').innerHTML = at.constraints.length ? at.constraints.map(c => `<span class="chip static">${esc(c)}</span>`).join('')
+      : '<span class="muted">không có</span>';
+    $('#attrNote').textContent = at.note || `Xếp hạng lại top-${at.rerank_k} của CLIP: điểm mới = z(điểm CLIP) + ${at.weight} × mức thoả mãn.`;
+  }
   const grid = $('#resGrid'); grid.innerHTML = '';
-  r.results.forEach((it, i) => grid.appendChild(tile(it, {
-    rank: i + 1, score: it.score,
-    onclick: () => { setRefFromGallery(it); window.scrollTo({ top: 0, behavior: 'smooth' }); },
-  })));
+  r.results.forEach((it, i) => {
+    const box = H('div', 'res', grid);
+    box.appendChild(tile(it, { rank: i + 1, score: it.score,
+      onclick: () => { setRefFromGallery(it); window.scrollTo({ top: 0, behavior: 'smooth' }); } }));
+    const meta = H('div', 'meta', box);
+    if (it.move !== undefined) {
+      const mv = it.move > 0 ? `<span class="mv up">↑${it.move}</span>` : it.move < 0 ? `<span class="mv down">↓${-it.move}</span>` : '<span class="mv">=</span>';
+      meta.innerHTML = `${mv} CLIP #${it.clip_rank} · thoả ${it.satisfaction}`;
+      if (it.measures) {
+        meta.innerHTML += `<div class="sw">${it.measures.swatches.map(s => `<i style="background:${s.hex}" title="${s.hex} · ${Math.round(s.share * 100)}%"></i>`).join('')}` +
+          ` L* ${it.measures.lightness} · rực ${it.measures.colorfulness}</div>`;
+      }
+      if (it.why && it.why.length) meta.innerHTML += `<div>${it.why.map(esc).join('<br>')}</div>`;
+    }
+    if (r.mode !== 'cbir' && r.mode !== 'text' && r.mode !== 'sum') {
+      const b = H('button', 'btn whybtn', box);
+      b.textContent = 'Vì sao?';
+      b.onclick = () => explainResult(it, b);
+    }
+  });
   markRef();
   $('#resultsCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
