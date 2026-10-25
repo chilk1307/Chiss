@@ -24,7 +24,16 @@ Nhóm thêm hai lớp xử lý ảnh cổ điển lên trên SEARLE:
 
 \* bỏ ảnh tham chiếu khỏi gallery. † khoảng tin cậy bootstrap 95% của hiệu số so với φ_B32 không chứa 0.
 
-Kết quả trên ảnh xấu (CIRR R@1, trung bình 8 loại suy giảm ở mức 2):
+Server test chính thức (25/10/2026; CIRR rc2):
+
+| | CIRR R@1 | CIRR R@5 | CIRR Rsubset@1 | CIRCO mAP@5 | CIRCO mAP@10 |
+|---|---|---|---|---|---|
+| SEARLE (φ công bố), chạy lại | 23.33 | 52.89 | 53.90 | 9.36 | 9.95 |
+| φ_B32 | 23.35 | 52.65 | 53.98 | 9.44 | 9.79 |
+| φ_B32 + kiểm chứng thuộc tính | 23.54 | **53.13** | 54.43 | 9.59 | 9.93 |
+| φ bền | **23.59** | 53.08 | **54.46** | **9.66** | **9.95** |
+
+Kết quả trên ảnh xấu (CIRR val R@1, trung bình 8 loại suy giảm ở mức 2):
 
 | | R@1 |
 |---|---|
