@@ -211,7 +211,7 @@ details.field summary { cursor: pointer; font-size: 13.5px; }
 
           <div class="field">
             <label for="caption">Mô tả thay đổi mong muốn (tiếng Anh)</label>
-            <textarea id="caption" placeholder="e.g. is red and has long sleeves"></textarea>
+            <textarea id="caption" placeholder="e.g. is red and has long sleeves (gõ tiếng Việt cũng được: màu đỏ và có tay áo dài)"></textarea>
             <div class="chips" id="exampleChips"></div>
           </div>
 
@@ -308,6 +308,7 @@ details.field summary { cursor: pointer; font-size: 13.5px; }
           <div class="query-box">
             <div class="muted">Prompt gửi vào CLIP</div>
             <div class="mono" id="resPrompt"></div>
+            <div class="muted" id="resTrans" hidden></div>
           </div>
           <div id="neighbors" style="margin-top:10px" hidden>
             <div class="muted">Pseudo-word <b>S*</b> (ảnh tham chiếu → từ) gần nhất với:</div>
@@ -650,6 +651,10 @@ function renderResults(r) {
   $('#resultsCard').hidden = false;
   $('#resMeta').textContent = `· ${r.results.length}/${r.gallery_size} ảnh · ${r.ms} ms`;
   $('#resPrompt').textContent = r.mode === 'text' ? `"${r.prompt}"  (chỉ văn bản)` : `"${r.prompt}"`;
+  const tr = r.translation;
+  $('#resTrans').hidden = !(tr && (tr.translated || tr.note));
+  if (tr && tr.translated) $('#resTrans').textContent = `Đã dịch sang tiếng Anh: "${tr.source}" → "${tr.text}"`;
+  else if (tr && tr.note) $('#resTrans').textContent = tr.note;
   const nb = $('#neighbors');
   nb.hidden = r.mode === 'text' || !r.neighbors.length;
   $('#neighChips').innerHTML = r.neighbors.map(n =>
