@@ -59,6 +59,10 @@ Server test (CIRR rc2, CIRCO), SEARLE-XL chạy lại khớp bài báo (CIRR R@1
 Trên ảnh xấu, SEARLE-XL chỉ mất trung bình 0.19 điểm R@1 (φ_B32: 1.40); phục hồi tự động trên ảnh xấu hỗn hợp
 tăng R@1 từ 24.13 lên 24.83 †.
 
+Bộ câu GPT sinh lại bằng Qwen2.5-1.5B (OTI 350 bước, CIRCO val, mAP@10, trung bình 4 seed): bộ gốc GPT-Neo 2.7B
+6.89, P2 (câu mồi gốc) 7.93, P3 (instruct, tả chi tiết nhìn thấy) 7.97 †. Trên CIRR (1 seed) mức tăng nhỏ và OTI vẫn
+thấp hơn φ_B32.
+
 Mọi con số đều lấy từ `MyDrive/SEARLE/results/<mã thí nghiệm>/metrics.json`. Báo cáo đầy đủ (Claude Docs) có thêm
 phân tích lỗi, tiền xử lý, lọc tần số, các khoảng tin cậy và hạn chế.
 
