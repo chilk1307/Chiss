@@ -209,3 +209,17 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 |---|---|---|
 | `README.md` (gốc repo) | C19 | Tóm tắt đề tài, kết quả chính, cấu trúc, cách chạy lại. |
 | `colab/queue/` | C19 | Các hàng đợi đã dùng để chạy toàn bộ thí nghiệm (`q1`–`q8`, `t1`–`t3`, `boot.sh`, `common.sh`) và hướng dẫn. |
+
+## 25/10/2026: SEARLE-XL (CLIP ViT-L/14), hàng đợi q11
+
+### Kiểm chứng
+
+- `colab/queue/q11.sh` chạy hết trên Colab A100 (09:30–10:15 UTC), không lượt nào hỏng.
+- File test `xl_cirr`, `xl_attr_cirr` (kèm `subset_`), `xl_circo`, `xl_attr_circo` ở `MyDrive/SEARLE/outputs/submissions/`.
+
+### Thêm
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `colab/queue/q11.sh` | E9 | Đường cơ sở SEARLE-XL (E9.0), kiểm chứng thuộc tính với cờ của E2.7 (E9.1), ảnh xấu mức 2 có và không phục hồi (E9.2), khoảng tin cậy, file test (E9.3). |
+| `README.md` (gốc repo) | E9 | Bảng kết quả SEARLE-XL. |
