@@ -1,0 +1,426 @@
+From 857bb862a45970f0f2f1d16fe4b6630b5c877a60 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 25 Oct 2026 12:45:49 +0000
+Subject: [PATCH 1/3] queue 12: small test of regenerated GPT phrases (E10);
+ batched instruct mode in generate_phrases_llm.py
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01SDKqTbeuDdQpKjDcafzPSf
+---
+ SEARLE-main/colab/queue/q12.sh            | 56 +++++++++++++++++++++++
+ SEARLE-main/tools/generate_phrases_llm.py | 32 +++++++------
+ 2 files changed, 73 insertions(+), 15 deletions(-)
+ create mode 100644 SEARLE-main/colab/queue/q12.sh
+
+diff --git a/SEARLE-main/colab/queue/q12.sh b/SEARLE-main/colab/queue/q12.sh
+new file mode 100644
+index 0000000..cb565f0
+--- /dev/null
++++ b/SEARLE-main/colab/queue/q12.sh
+@@ -0,0 +1,56 @@
++#!/bin/bash
++# Queue 12 (25/10): small test of regenerated GPT phrases (E10). Two new phrase sets for the concepts of the CIRCO val
++# and CIRR val reference images (top-15 per image, E7.0), both with Qwen2.5-1.5B (Apache-2.0):
++#   P2 = base model, the original prompt "a photo of {concept} that" (newer language model, same task)
++#   P3 = instruct model, sentences about one visible detail (tools/prompts/p3.txt)
++# then OTI from random init (lr 0.02, 350 steps, as E7.1a / E7.2a with GPTNeo27B), a seed control with the
++# original phrases, and paired CIs against E7.1a / E7.2a. Generation uses Colab's own Python (recent transformers).
++source $DRIVE/queue/common.sh
++echo "===== queue 12 start $(date)"
++SYS=/usr/bin/python3
++SIM=$DRIVE/outputs/similar_concepts
++GP=$DRIVE/outputs/GPT_phrases
++CIRCOV="--dataset circo --dataset-path $DATA/CIRCO_local --split val"
++CIRRV="--dataset cirr --dataset-path $DATA/CIRR --split val"
++SC="--similar-concepts $SIM/circo/val/ViT-B32_top_250_ensembling_image_texts.csv --top-k-phi 0"
++SR="--similar-concepts $SIM/cirr/val/ViT-B32_top_250_ensembling_image_texts.csv --top-k-phi 0"
++LIC="--license Apache-2.0"
++P2="--mode continue --model Qwen/Qwen2.5-1.5B --n-phrases 64 --batch-concepts 8 $LIC"
++P3="--mode instruct --model Qwen/Qwen2.5-1.5B-Instruct --n-phrases 32 --batch-concepts 32 --rounds 2 $LIC"
++
++# --- generation (CIRCO concepts first, then the CIRR ones are added to the same set), cleaning, statistics
++run $R/E10.0-gen-P2-circo $SYS tools/generate_phrases_llm.py $P2 $SC --out-dir $GP/P2_qwen15_val_raw
++run $R/E10.0-gen-P3-circo $SYS tools/generate_phrases_llm.py $P3 $SC --out-dir $GP/P3_qwen15i_val_raw
++run $R/E10.0-gen-P2-cirr $SYS tools/generate_phrases_llm.py $P2 $SR --out-dir $GP/P2_qwen15_val_raw
++run $R/E10.0-gen-P3-cirr $SYS tools/generate_phrases_llm.py $P3 $SR --out-dir $GP/P3_qwen15i_val_raw
++for N in P2_qwen15_val P3_qwen15i_val; do
++  run $R/E10.0-clean-$N $PY tools/clean_phrases.py --phrases $GP/${N}_raw/concept_to_phrases.pkl --out-exp $N --out-root $GP
++  run $R/E10.0-stats-$N $PY tools/phrases_stats.py --phrases $GP/$N/concept_to_phrases.pkl \
++    --similar-concepts $SIM/cirr/val/ViT-B32_top_250_ensembling_image_texts.csv --top-k-phi 0 --out $R/E10.0-stats-$N
++done
++run $R/E10.0-stats-GPTNeo27B $PY tools/phrases_stats.py --phrases $GP/GPTNeo27B/concept_to_phrases.pkl \
++  --similar-concepts $SIM/cirr/val/ViT-B32_top_250_ensembling_image_texts.csv --top-k-phi 0 --out $R/E10.0-stats-GPTNeo27B
++
++oti() { local E=$1; shift; run $R/$E-oti $PY src/oti_inversion.py --exp-name $E --clip-model-name ViT-B/32 \
++  --init random --learning-rate 0.02 --snapshot-steps 50,350 "$@"; }
++ev() { local E=$1; shift; run $R/$E-ema350 $V --eval-type oti --exp-name $E --token-file ema_oti_pseudo_tokens_step350.pt "$@" $CACHE --output-dir $R/$E-ema350; }
++
++# --- CIRCO val (220 images, ~5 min each): seed control, P2, P3
++oti E10.1a-gptneo-seed43-circo $CIRCOV --gpt-exp-name GPTNeo27B --seed 43
++oti E10.1b-P2-circo $CIRCOV --gpt-exp-name P2_qwen15_val
++oti E10.1c-P3-circo $CIRCOV --gpt-exp-name P3_qwen15i_val
++for E in E10.1a-gptneo-seed43-circo E10.1b-P2-circo E10.1c-P3-circo; do ev $E $CIRCO; done
++run $R/E10.1-ci-circo $PY tools/bootstrap_ci.py --baseline $R/E7.1a-random-lr0.02-circo-step350-ema_oti_pseudo_tokens \
++  --runs $R/E10.1a-gptneo-seed43-circo-ema350 $R/E10.1b-P2-circo-ema350 $R/E10.1c-P3-circo-ema350 --out $R/E10.1-ci-circo
++
++# --- CIRR val (~2.2k images, ~48 min each): P2, seed control, P3
++oti E10.2b-P2-cirr $CIRRV --gpt-exp-name P2_qwen15_val
++ev E10.2b-P2-cirr $CIRR
++oti E10.2a-gptneo-seed43-cirr $CIRRV --gpt-exp-name GPTNeo27B --seed 43
++ev E10.2a-gptneo-seed43-cirr $CIRR
++oti E10.2c-P3-cirr $CIRRV --gpt-exp-name P3_qwen15i_val
++ev E10.2c-P3-cirr $CIRR
++run $R/E10.2-ci-cirr $PY tools/bootstrap_ci.py --baseline $R/E7.2a-random-lr0.02-cirr-step350-ema_oti_pseudo_tokens \
++  --runs $(ls -d $R/E10.2*-cirr-ema350 2>/dev/null) --out $R/E10.2-ci-cirr
++$PY tools/collect_results.py --results-dir $R --out $R/summary.md > /dev/null 2>&1
++echo "===== queue 12 done $(date)"
+diff --git a/SEARLE-main/tools/generate_phrases_llm.py b/SEARLE-main/tools/generate_phrases_llm.py
+index e13fcac..69e95ab 100644
+--- a/SEARLE-main/tools/generate_phrases_llm.py
++++ b/SEARLE-main/tools/generate_phrases_llm.py
+@@ -106,7 +106,7 @@ def main():
+     parser.add_argument('--top-k-oti', type=int, default=15)
+     parser.add_argument('--top-k-phi', type=int, default=150)
+     parser.add_argument('--n-phrases', type=int, default=64)
+-    parser.add_argument('--batch-concepts', type=int, default=8, help='Concepts generated together (continue mode)')
++    parser.add_argument('--batch-concepts', type=int, default=8, help='Concepts generated together')
+     parser.add_argument('--temperature', type=float, default=0.7)
+     parser.add_argument('--top-p', type=float, default=0.95)
+     parser.add_argument('--max-new-tokens', type=int, default=40)
+@@ -147,7 +147,7 @@ def main():
+         tmp.replace(result_file)
+ 
+     start, generated = time.time(), 0
+-    step = args.batch_concepts if args.mode == 'continue' else 1
++    step = args.batch_concepts
+     for i in range(0, len(todo), step):
+         chunk = todo[i:i + step]
+         with torch.no_grad():
+@@ -164,21 +164,23 @@ def main():
+                     result[c] = clean([f"a photo of {c} that{s if s[:1].isspace() else ' ' + s}"
+                                        for s in first_sentences], c, args.max_words)
+             else:
+-                c = chunk[0]
+-                phrases = []
++                # instruct mode, --batch-concepts requests generated together (left padding); a concept with fewer
++                # than --n-phrases phrases is asked again, at most --rounds times
++                pending = {c: [] for c in chunk}
+                 for _ in range(args.rounds):
+-                    messages = [{'role': 'user', 'content': template.format(n=args.n_phrases, concept=c)}]
+-                    encoded = tokenizer.apply_chat_template(messages, add_generation_prompt=True,
+-                                                            return_tensors='pt', return_dict=True)
+-                    ids = encoded['input_ids'].to(model.device)  # recent transformers return a dict here
+-                    mask = encoded.get('attention_mask')
+-                    output = model.generate(input_ids=ids, attention_mask=None if mask is None else
+-                                            mask.to(model.device), max_new_tokens=args.n_phrases * 30, **sample)
+-                    phrases = clean(phrases + parse_json_list(
+-                        tokenizer.decode(output[0, ids.shape[1]:], skip_special_tokens=True)), c, args.max_words)
+-                    if len(phrases) >= args.n_phrases:
++                    need = [c for c in chunk if len(pending[c]) < args.n_phrases]
++                    if not need:
+                         break
+-                result[c] = phrases[:args.n_phrases]
++                    texts_in = [tokenizer.apply_chat_template(
++                        [{'role': 'user', 'content': template.format(n=args.n_phrases, concept=c)}],
++                        add_generation_prompt=True, tokenize=False) for c in need]
++                    enc = tokenizer(texts_in, return_tensors='pt', padding=True, add_special_tokens=False).to(model.device)
++                    output = model.generate(**enc, max_new_tokens=args.n_phrases * 30, **sample)
++                    outs = tokenizer.batch_decode(output[:, enc['input_ids'].shape[1]:], skip_special_tokens=True)
++                    for c, o in zip(need, outs):
++                        pending[c] = clean(pending[c] + parse_json_list(o), c, args.max_words)
++                for c in chunk:
++                    result[c] = pending[c][:args.n_phrases]
+         generated += len(chunk)
+         if generated % args.save_every < step or i + step >= len(todo):
+             save()
+-- 
+2.43.0
+
+
+From 607ebea2905a803c942336326c9ac932730d5669 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 25 Oct 2026 13:10:08 +0000
+Subject: [PATCH 2/3] demo: translate Vietnamese captions to English before
+ SEARLE (opus-mt-vi-en)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01SDKqTbeuDdQpKjDcafzPSf
+---
+ SEARLE-main/CHANGES.md             | 21 +++++++
+ SEARLE-main/demo/app.py            | 18 ++++--
+ SEARLE-main/demo/requirements.txt  |  2 +
+ SEARLE-main/demo/static/index.html |  7 ++-
+ SEARLE-main/demo/translate.py      | 91 ++++++++++++++++++++++++++++++
+ 5 files changed, 133 insertions(+), 6 deletions(-)
+ create mode 100644 SEARLE-main/demo/translate.py
+
+diff --git a/SEARLE-main/CHANGES.md b/SEARLE-main/CHANGES.md
+index b00a580..f0ef745 100644
+--- a/SEARLE-main/CHANGES.md
++++ b/SEARLE-main/CHANGES.md
+@@ -223,3 +223,24 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
+ |---|---|---|
+ | `colab/queue/q11.sh` | E9 | Đường cơ sở SEARLE-XL (E9.0), kiểm chứng thuộc tính với cờ của E2.7 (E9.1), ảnh xấu mức 2 có và không phục hồi (E9.2), khoảng tin cậy, file test (E9.3). |
+ | `README.md` (gốc repo) | E9 | Bảng kết quả SEARLE-XL. |
++
++## 25/10/2026: câu tiếng Việt trong demo, hàng đợi q12 (bộ câu GPT mới)
++
++### Kiểm chứng
++
++- `demo/translate.py` chạy trong venv Python 3.8 trên Colab A100 (transformers 4.24 + sentencepiece): "màu đỏ và có tay áo dài" → "red with long sleeves", "có hai con chó trên bãi cỏ" → "has two dogs on the lawn"; lần đầu 16 giây (tải mô hình), sau đó khoảng 0,2 giây mỗi câu. Câu không dấu (tiếng Anh) đi thẳng, không dịch.
++
++### Thêm
++
++| File | Việc | Nội dung |
++|---|---|---|
++| `demo/translate.py` | Demo | Nhận ra câu tiếng Việt (đ, ă, â, ê, ô, ơ, ư hoặc dấu thanh) và dịch sang tiếng Anh bằng `Helsinki-NLP/opus-mt-vi-en` (CC-BY-4.0) trước khi vào SEARLE và bộ phân tích thuộc tính. `SEARLE_TRANSLATE=0` tắt, `SEARLE_TRANSLATE_MODEL` đổi mô hình; không tải được mô hình thì dùng nguyên câu và báo lý do. |
++| `colab/queue/q12.sh` | E10 | Sinh lại bộ câu GPT bằng Qwen2.5-1.5B (P2: câu mồi gốc; P3: bản instruct, câu tả chi tiết nhìn thấy được) cho khái niệm của ảnh CIRCO val và CIRR val, rồi OTI 350 bước so với bộ GPT-Neo 2.7B, kèm lượt đối chứng đổi seed và khoảng tin cậy. |
++
++### Sửa
++
++| File | Việc | Thay đổi |
++|---|---|---|
++| `demo/app.py`, `demo/static/index.html` | Demo | Các API tìm kiếm, So sánh, Vì sao dùng câu đã dịch; kết quả trả thêm `translation`, giao diện hiện câu gốc → câu tiếng Anh. |
++| `demo/requirements.txt` | Demo | Thêm `transformers`, `sentencepiece`. |
++| `tools/generate_phrases_llm.py` | E10 | Chế độ instruct sinh nhiều khái niệm cùng lúc (`--batch-concepts`), trước đây từng khái niệm một. |
+diff --git a/SEARLE-main/demo/app.py b/SEARLE-main/demo/app.py
+index 5f1be64..5871fab 100644
+--- a/SEARLE-main/demo/app.py
++++ b/SEARLE-main/demo/app.py
+@@ -37,6 +37,7 @@ from src.data_utils import targetpad_transform  # noqa: E402
+ from src.encode_with_pseudo_tokens import encode_with_pseudo_tokens  # noqa: E402
+ from src.phi import Phi  # noqa: E402
+ import extras  # noqa: E402  (C17: attribute re-ranking, degradation/restoration, CBIR, occlusion map)
++import translate  # noqa: E402  (Vietnamese caption -> English before SEARLE)
+ 
+ CLIP_NAME = "ViT-B/32"
+ # Ưu tiên bản tái lập đầy đủ (OTI 100k ảnh) trong outputs/, nếu không có thì dùng data/ của repo
+@@ -601,6 +602,8 @@ def search():
+     if mode != "image" and not caption:
+         return jsonify({"error": "Hãy nhập mô tả thay đổi (caption)."}), 400
+     topk = max(1, min(int(request.form.get("topk", 12)), 60))
++    tr = translate.to_english(caption)
++    caption = tr["text"]
+ 
+     ref_id = request.form.get("ref_id")
+     exclude = None
+@@ -616,7 +619,9 @@ def search():
+             return jsonify({"error": "Hãy chọn ảnh tham chiếu."}), 400
+     except Exception:  # noqa: BLE001
+         return jsonify({"error": "Không đọc được ảnh tham chiếu."}), 400
+-    return jsonify(engine.search(ref, caption, mode, topk, exclude))
++    out = engine.search(ref, caption, mode, topk, exclude)
++    out["translation"] = tr
++    return jsonify(out)
+ 
+ 
+ # ----------------------------------------------------------------------------------------------------------------------
+@@ -665,7 +670,9 @@ def search2():
+     except Exception as e:  # noqa: BLE001
+         return jsonify({"error": str(e) or "Không đọc được ảnh tham chiếu."}), 400
+     t0 = time.time()
+-    out = {"mode": mode, "gallery_size": len(engine.items)}
++    tr = translate.to_english(caption)
++    caption = tr["text"]
++    out = {"mode": mode, "gallery_size": len(engine.items), "translation": tr}
+     rgb = np.asarray(ref)
+ 
+     # 2. degraded query -> restoration
+@@ -713,7 +720,8 @@ def compare():
+     bad = _check_ready()
+     if bad:
+         return bad
+-    caption = request.form.get("caption", "").strip()
++    tr = translate.to_english(request.form.get("caption", ""))
++    caption = tr["text"]
+     topk = max(1, min(int(request.form.get("topk", 6)), 24))
+     try:
+         ref, exclude = _reference_from_request()
+@@ -727,7 +735,7 @@ def compare():
+         sims, prompt, _ = engine.query_sims(ref, caption, mode)
+         rows.append({"mode": mode, "prompt": prompt, "ms": int((time.time() - t0) * 1000),
+                      "results": engine.top_results(sims, topk, exclude)})
+-    return jsonify({"rows": rows})
++    return jsonify({"rows": rows, "translation": tr})
+ 
+ 
+ @app.post("/api/explain")
+@@ -742,7 +750,7 @@ def explain_result():
+         ref, _ = _reference_from_request()
+     except Exception as e:  # noqa: BLE001
+         return jsonify({"error": str(e)}), 400
+-    out = extras.occlusion_map(engine, ref, request.form.get("caption", ""), target)
++    out = extras.occlusion_map(engine, ref, translate.to_english(request.form.get("caption", ""))["text"], target)
+     out["mask"], out["mask_kind"] = extras.mask_overlay(engine, target)
+     return jsonify(out)
+ 
+diff --git a/SEARLE-main/demo/requirements.txt b/SEARLE-main/demo/requirements.txt
+index fdc6195..9b50876 100644
+--- a/SEARLE-main/demo/requirements.txt
++++ b/SEARLE-main/demo/requirements.txt
+@@ -9,3 +9,5 @@ ftfy
+ regex
+ tqdm
+ setuptools<81
++transformers
++sentencepiece
+diff --git a/SEARLE-main/demo/static/index.html b/SEARLE-main/demo/static/index.html
+index c02fb61..976f694 100644
+--- a/SEARLE-main/demo/static/index.html
++++ b/SEARLE-main/demo/static/index.html
+@@ -211,7 +211,7 @@ details.field summary { cursor: pointer; font-size: 13.5px; }
+ 
+           <div class="field">
+             <label for="caption">Mô tả thay đổi mong muốn (tiếng Anh)</label>
+-            <textarea id="caption" placeholder="e.g. is red and has long sleeves"></textarea>
++            <textarea id="caption" placeholder="e.g. is red and has long sleeves (gõ tiếng Việt cũng được: màu đỏ và có tay áo dài)"></textarea>
+             <div class="chips" id="exampleChips"></div>
+           </div>
+ 
+@@ -308,6 +308,7 @@ details.field summary { cursor: pointer; font-size: 13.5px; }
+           <div class="query-box">
+             <div class="muted">Prompt gửi vào CLIP</div>
+             <div class="mono" id="resPrompt"></div>
++            <div class="muted" id="resTrans" hidden></div>
+           </div>
+           <div id="neighbors" style="margin-top:10px" hidden>
+             <div class="muted">Pseudo-word <b>S*</b> (ảnh tham chiếu → từ) gần nhất với:</div>
+@@ -650,6 +651,10 @@ function renderResults(r) {
+   $('#resultsCard').hidden = false;
+   $('#resMeta').textContent = `· ${r.results.length}/${r.gallery_size} ảnh · ${r.ms} ms`;
+   $('#resPrompt').textContent = r.mode === 'text' ? `"${r.prompt}"  (chỉ văn bản)` : `"${r.prompt}"`;
++  const tr = r.translation;
++  $('#resTrans').hidden = !(tr && (tr.translated || tr.note));
++  if (tr && tr.translated) $('#resTrans').textContent = `Đã dịch sang tiếng Anh: "${tr.source}" → "${tr.text}"`;
++  else if (tr && tr.note) $('#resTrans').textContent = tr.note;
+   const nb = $('#neighbors');
+   nb.hidden = r.mode === 'text' || !r.neighbors.length;
+   $('#neighChips').innerHTML = r.neighbors.map(n =>
+diff --git a/SEARLE-main/demo/translate.py b/SEARLE-main/demo/translate.py
+new file mode 100644
+index 0000000..218d676
+--- /dev/null
++++ b/SEARLE-main/demo/translate.py
+@@ -0,0 +1,91 @@
++"""
++Vietnamese -> English for the caption box of the demo. CLIP ViT-B/32 and the attribute parser only read English, so a
++caption written in Vietnamese is translated before it reaches SEARLE; nothing is retrained.
++
++Model: Helsinki-NLP/opus-mt-vi-en (MarianMT, CC-BY-4.0, ~300 MB, downloaded on first use; needs transformers and
++sentencepiece). Another seq2seq model can be chosen with the environment variable SEARLE_TRANSLATE_MODEL, and
++SEARLE_TRANSLATE=0 turns the translation off. If the model cannot be loaded the caption is used as typed and the
++reason is returned, so the demo keeps working.
++"""
++import os
++import re
++import threading
++import unicodedata
++from functools import lru_cache
++
++MODEL_NAME = os.environ.get("SEARLE_TRANSLATE_MODEL", "Helsinki-NLP/opus-mt-vi-en")
++ENABLED = os.environ.get("SEARLE_TRANSLATE", "1") != "0"
++
++_lock = threading.Lock()
++_model = None
++_tokenizer = None
++_error = None
++
++# letters that only Vietnamese (among the languages a user of this demo would type) writes: đ and the vowels with a
++# breve, circumflex or horn, plus any vowel with one of the five tone marks
++_VI_BASE = set("đăâêôơư")
++_TONES = {"̀", "́", "̃", "̉", "̣"}  # grave, acute, tilde, hook above, dot below
++
++
++def looks_vietnamese(text: str) -> bool:
++    for ch in text.lower():
++        if ch in _VI_BASE:
++            return True
++        decomposed = unicodedata.normalize("NFD", ch)
++        if len(decomposed) > 1 and any(m in _TONES for m in decomposed[1:]):
++            return True
++    return False
++
++
++def _load():
++    global _model, _tokenizer, _error
++    if _model is not None or _error is not None:
++        return
++    with _lock:
++        if _model is not None or _error is not None:
++            return
++        try:
++            import torch
++            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
++            _tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
++            model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
++            model.eval()
++            if torch.cuda.is_available():
++                model = model.to("cuda")
++            _model = model
++        except Exception as e:  # noqa: BLE001  (missing package, no network, ...)
++            _error = f"{type(e).__name__}: {e}"[:300]
++
++
++@lru_cache(maxsize=2048)
++def _translate(text: str) -> str:
++    import torch
++    batch = _tokenizer([text], return_tensors="pt", truncation=True, max_length=128).to(_model.device)
++    with torch.no_grad():
++        out = _model.generate(**batch, max_new_tokens=96, num_beams=4)
++    en = _tokenizer.decode(out[0], skip_special_tokens=True).strip()
++    return re.sub(r"\s+", " ", en)
++
++
++def to_english(caption: str) -> dict:
++    """
++    {"text": caption for SEARLE, "source": caption as typed, "translated": bool, "note": str | None}
++    """
++    caption = (caption or "").strip()
++    result = {"text": caption, "source": caption, "translated": False, "note": None}
++    if not caption or not ENABLED or not looks_vietnamese(caption):
++        return result
++    _load()
++    if _model is None:
++        result["note"] = f"Không dịch được ({MODEL_NAME} chưa tải được: {_error}); dùng nguyên câu đã nhập."
++        return result
++    en = _translate(caption)
++    # CIR captions describe the change ("is red", "has two dogs"); the translation of a Vietnamese sentence without a
++    # subject often starts with "It is ..." / "There are ...", which reads badly after "a photo of $ that"
++    en = re.sub(r"^(it|this|that)\s+(is|has|was)\b", r"\2", en, flags=re.IGNORECASE)
++    en = re.sub(r"^there\s+(are|is)\s+", "has ", en, flags=re.IGNORECASE)  # "There are two dogs" -> "has two dogs"
++    if len(en) > 1 and en[0].isupper() and en[1].islower():
++        en = en[0].lower() + en[1:]
++    en = en.rstrip(".")
++    result.update(text=en, translated=True)
++    return result
+-- 
+2.43.0
+
+
+From ad13b6c7556eb3d19aca441948acd8ddf81a8005 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 25 Oct 2026 13:10:19 +0000
+Subject: [PATCH 3/3] README: Vietnamese captions in the demo
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01SDKqTbeuDdQpKjDcafzPSf
+---
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index 782d001..26f932a 100644
+--- a/README.md
++++ b/README.md
+@@ -93,7 +93,7 @@ plans/                     kế hoạch và mã thí nghiệm (E1.x tái lập v
+   Thêm `--degrade motion_blur:2 --restore auto` để thử ảnh xấu và phục hồi.
+ - **File nộp server test:** `src/generate_test_submission.py` với cùng cờ và `--submission-name final_cirr`.
+   Các file đã sinh nằm ở `MyDrive/SEARLE/outputs/submissions/`.
+-- **Demo:** `python SEARLE-main/demo/app.py`. Biến `SEARLE_PHI_DIR` chọn mô hình φ, `SEARLE_DEMO_PORT` đổi cổng.
++- **Demo:** `python SEARLE-main/demo/app.py`. Biến `SEARLE_PHI_DIR` chọn mô hình φ, `SEARLE_DEMO_PORT` đổi cổng. Câu mô tả gõ tiếng Việt được tự dịch sang tiếng Anh (`Helsinki-NLP/opus-mt-vi-en`, cần `transformers` và `sentencepiece`; `SEARLE_TRANSLATE=0` để tắt).
+ 
+ ## Tham khảo
+ 
+-- 
+2.43.0
+
