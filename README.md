@@ -93,7 +93,7 @@ plans/                     kế hoạch và mã thí nghiệm (E1.x tái lập v
   Thêm `--degrade motion_blur:2 --restore auto` để thử ảnh xấu và phục hồi.
 - **File nộp server test:** `src/generate_test_submission.py` với cùng cờ và `--submission-name final_cirr`.
   Các file đã sinh nằm ở `MyDrive/SEARLE/outputs/submissions/`.
-- **Demo:** `python SEARLE-main/demo/app.py`. Biến `SEARLE_PHI_DIR` chọn mô hình φ, `SEARLE_DEMO_PORT` đổi cổng.
+- **Demo:** `python SEARLE-main/demo/app.py`. Biến `SEARLE_PHI_DIR` chọn mô hình φ, `SEARLE_DEMO_PORT` đổi cổng. Câu mô tả gõ tiếng Việt được tự dịch sang tiếng Anh (`Helsinki-NLP/opus-mt-vi-en`, cần `transformers` và `sentencepiece`; `SEARLE_TRANSLATE=0` để tắt).
 
 ## Tham khảo
 
