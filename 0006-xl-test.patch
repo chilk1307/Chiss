@@ -1,0 +1,32 @@
+From f4168d4f0a6759a8decce1749aa6fb246636b253 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 25 Oct 2026 11:14:42 +0000
+Subject: [PATCH] README: SEARLE-XL test-server results
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01SDKqTbeuDdQpKjDcafzPSf
+---
+ README.md | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/README.md b/README.md
+index 002d01d..782d001 100644
+--- a/README.md
++++ b/README.md
+@@ -49,6 +49,13 @@ SEARLE-XL (φ công bố, CLIP ViT-L/14), val, giữ nguyên cấu hình chọn
+ | SEARLE-XL | 24.35 | 53.81 | 53.07 | 14.12 | 25.78 |
+ | SEARLE-XL + kiểm chứng thuộc tính | **24.75** † | **54.25** † | **53.53** † | 14.25 | 26.17 |
+ 
++Server test (CIRR rc2, CIRCO), SEARLE-XL chạy lại khớp bài báo (CIRR R@1 24.24, CIRCO mAP@10 12.73):
++
++| | CIRR R@1 | CIRR R@5 | CIRR Rsubset@1 | CIRCO mAP@5 | CIRCO mAP@10 |
++|---|---|---|---|---|---|
++| SEARLE-XL | 24.34 | 52.19 | 53.76 | 11.66 | 12.72 |
++| SEARLE-XL + kiểm chứng thuộc tính | **24.60** | **52.70** | **54.12** | **11.76** | **12.80** |
++
+ Trên ảnh xấu, SEARLE-XL chỉ mất trung bình 0.19 điểm R@1 (φ_B32: 1.40); phục hồi tự động trên ảnh xấu hỗn hợp
+ tăng R@1 từ 24.13 lên 24.83 †.
+ 
+-- 
+2.43.0
+

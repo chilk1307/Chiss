@@ -49,6 +49,13 @@ SEARLE-XL (φ công bố, CLIP ViT-L/14), val, giữ nguyên cấu hình chọn 
 | SEARLE-XL | 24.35 | 53.81 | 53.07 | 14.12 | 25.78 |
 | SEARLE-XL + kiểm chứng thuộc tính | **24.75** † | **54.25** † | **53.53** † | 14.25 | 26.17 |
 
+Server test (CIRR rc2, CIRCO), SEARLE-XL chạy lại khớp bài báo (CIRR R@1 24.24, CIRCO mAP@10 12.73):
+
+| | CIRR R@1 | CIRR R@5 | CIRR Rsubset@1 | CIRCO mAP@5 | CIRCO mAP@10 |
+|---|---|---|---|---|---|
+| SEARLE-XL | 24.34 | 52.19 | 53.76 | 11.66 | 12.72 |
+| SEARLE-XL + kiểm chứng thuộc tính | **24.60** | **52.70** | **54.12** | **11.76** | **12.80** |
+
 Trên ảnh xấu, SEARLE-XL chỉ mất trung bình 0.19 điểm R@1 (φ_B32: 1.40); phục hồi tự động trên ảnh xấu hỗn hợp
 tăng R@1 từ 24.13 lên 24.83 †.
 
