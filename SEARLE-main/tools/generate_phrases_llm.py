@@ -106,7 +106,7 @@ def main():
     parser.add_argument('--top-k-oti', type=int, default=15)
     parser.add_argument('--top-k-phi', type=int, default=150)
     parser.add_argument('--n-phrases', type=int, default=64)
-    parser.add_argument('--batch-concepts', type=int, default=8, help='Concepts generated together (continue mode)')
+    parser.add_argument('--batch-concepts', type=int, default=8, help='Concepts generated together')
     parser.add_argument('--temperature', type=float, default=0.7)
     parser.add_argument('--top-p', type=float, default=0.95)
     parser.add_argument('--max-new-tokens', type=int, default=40)
@@ -147,7 +147,7 @@ def main():
         tmp.replace(result_file)
 
     start, generated = time.time(), 0
-    step = args.batch_concepts if args.mode == 'continue' else 1
+    step = args.batch_concepts
     for i in range(0, len(todo), step):
         chunk = todo[i:i + step]
         with torch.no_grad():
@@ -164,21 +164,23 @@ def main():
                     result[c] = clean([f"a photo of {c} that{s if s[:1].isspace() else ' ' + s}"
                                        for s in first_sentences], c, args.max_words)
             else:
-                c = chunk[0]
-                phrases = []
+                # instruct mode, --batch-concepts requests generated together (left padding); a concept with fewer
+                # than --n-phrases phrases is asked again, at most --rounds times
+                pending = {c: [] for c in chunk}
                 for _ in range(args.rounds):
-                    messages = [{'role': 'user', 'content': template.format(n=args.n_phrases, concept=c)}]
-                    encoded = tokenizer.apply_chat_template(messages, add_generation_prompt=True,
-                                                            return_tensors='pt', return_dict=True)
-                    ids = encoded['input_ids'].to(model.device)  # recent transformers return a dict here
-                    mask = encoded.get('attention_mask')
-                    output = model.generate(input_ids=ids, attention_mask=None if mask is None else
-                                            mask.to(model.device), max_new_tokens=args.n_phrases * 30, **sample)
-                    phrases = clean(phrases + parse_json_list(
-                        tokenizer.decode(output[0, ids.shape[1]:], skip_special_tokens=True)), c, args.max_words)
-                    if len(phrases) >= args.n_phrases:
+                    need = [c for c in chunk if len(pending[c]) < args.n_phrases]
+                    if not need:
                         break
-                result[c] = phrases[:args.n_phrases]
+                    texts_in = [tokenizer.apply_chat_template(
+                        [{'role': 'user', 'content': template.format(n=args.n_phrases, concept=c)}],
+                        add_generation_prompt=True, tokenize=False) for c in need]
+                    enc = tokenizer(texts_in, return_tensors='pt', padding=True, add_special_tokens=False).to(model.device)
+                    output = model.generate(**enc, max_new_tokens=args.n_phrases * 30, **sample)
+                    outs = tokenizer.batch_decode(output[:, enc['input_ids'].shape[1]:], skip_special_tokens=True)
+                    for c, o in zip(need, outs):
+                        pending[c] = clean(pending[c] + parse_json_list(o), c, args.max_words)
+                for c in chunk:
+                    result[c] = pending[c][:args.n_phrases]
         generated += len(chunk)
         if generated % args.save_every < step or i + step >= len(todo):
             save()
