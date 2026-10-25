@@ -1,10 +1,10 @@
 {
-  "source": "17 images from SEARLE-main\\demo\\sample_images (seed 0)",
+  "source": "300 images from /content/data/CIRR/train (seed 0)",
   "rules": [
     {
       "feature": "impulse_ratio",
       "op": ">",
-      "threshold": 0.010229,
+      "threshold": 0.008067,
       "method": "median",
       "detects": [
         "salt_pepper"
@@ -13,7 +13,7 @@
     {
       "feature": "l_mean",
       "op": "<",
-      "threshold": 35.02492,
+      "threshold": 37.489989,
       "method": "clahe",
       "detects": [
         "low_light"
@@ -22,7 +22,7 @@
     {
       "feature": "blockiness",
       "op": ">",
-      "threshold": 1.2171,
+      "threshold": 1.243393,
       "method": "deblock",
       "detects": [
         "jpeg"
@@ -31,7 +31,7 @@
     {
       "feature": "noise_sigma",
       "op": ">",
-      "threshold": 9.273153,
+      "threshold": 5.582805,
       "method": "nlm",
       "detects": [
         "gauss_noise"
@@ -40,7 +40,7 @@
     {
       "feature": "hf_ratio",
       "op": "<",
-      "threshold": 0.005116,
+      "threshold": 0.003106,
       "method": "unsharp",
       "detects": [
         "gauss_blur",
@@ -51,7 +51,7 @@
     {
       "feature": "cast",
       "op": ">",
-      "threshold": 14.437285,
+      "threshold": 17.353979,
       "method": "gray_world",
       "detects": [
         "color_cast"
@@ -60,11 +60,11 @@
   ],
   "balanced_accuracy_per_rule": {
     "impulse_ratio": 1.0,
-    "l_mean": 0.926,
-    "blockiness": 0.994,
-    "noise_sigma": 0.906,
-    "hf_ratio": 0.92,
-    "cast": 0.855
+    "l_mean": 0.775,
+    "blockiness": 0.974,
+    "noise_sigma": 0.892,
+    "hf_ratio": 0.938,
+    "cast": 0.837
   },
-  "identification_accuracy": 0.869
+  "identification_accuracy": 0.813
 }

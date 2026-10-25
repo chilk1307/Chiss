@@ -187,3 +187,25 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 | File | Việc | Nội dung |
 |---|---|---|
 | `demo/extras.py` | C17 | Xếp hạng lại bằng `attributes/` (đo thuộc tính chỉ cho top-K, lưu `demo/cache/attributes.pt`), suy giảm và phục hồi bằng `degradations.py`, `degradation_estimation.py`, `restorations.py`, CBIR bằng `cbir.py` (đặc trưng lưu `demo/cache/cbir.pt`), bản đồ che khuất (ô 32, bước 16) và ảnh mặt nạ đối tượng. |
+
+## 25/10/2026: cấu hình cuối (C18), file nộp test, README (C19)
+
+### Kiểm chứng
+
+- `python -m py_compile demo/app.py`; demo chạy trên Colab A100 với 1.500 ảnh COCO, `SEARLE_PHI_DIR` trỏ tới `data/phi_models/phi_B32`.
+- Hàng đợi `q8.sh` chạy hết, không lượt nào hỏng: file `final_cirr`, `final_circo`, `robust_cirr`, `robust_circo` ở `MyDrive/SEARLE/outputs/submissions/`.
+
+### Sửa
+
+| File | Việc | Thay đổi |
+|---|---|---|
+| `demo/app.py` | C17 | Thêm `phi_B32` vào các đường dẫn thử (Linux phân biệt hoa thường, trước đây chỉ thử `phi_b32` nên demo trên Colab không nạp được φ); biến môi trường `SEARLE_PHI_DIR`, `SEARLE_DEMO_PORT`; bỏ chú thích kiểu `list[str]` để chạy được trên Python 3.8. |
+| `src/restore_oracle.json` | D8 | Phép phục hồi tốt nhất theo E3.2 (CIRR val, mức 2): bilateral cho nhiễu Gauss và JPEG, trung vị cho muối tiêu, unsharp cho mờ Gauss và độ phân giải thấp, Wiener cho mờ chuyển động, gamma cho thiếu sáng, gray-world cho ám màu. |
+| `src/restore_rules.json` | C14 | Ngưỡng luật tự động hiệu chỉnh trên 300 ảnh CIRR train (độ chính xác nhận dạng 0,813). |
+
+### Thêm
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `README.md` (gốc repo) | C19 | Tóm tắt đề tài, kết quả chính, cấu trúc, cách chạy lại. |
+| `colab/queue/` | C19 | Các hàng đợi đã dùng để chạy toàn bộ thí nghiệm (`q1`–`q8`, `t1`–`t3`, `boot.sh`, `common.sh`) và hướng dẫn. |

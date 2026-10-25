@@ -5,9 +5,11 @@ Backend Flask: nạp CLIP ViT-B/32 + mạng Phi bạn đã huấn luyện (data/
 cho phép dựng thư viện ảnh (gallery) rồi truy vấn "ảnh tham chiếu + mô tả thay đổi".
 
 Chạy:  python demo/app.py      ->  http://127.0.0.1:5050
+       (SEARLE_PHI_DIR=<thư mục phi> để chọn mô hình khác, SEARLE_DEMO_PORT=<cổng> để đổi cổng)
 """
 import io
 import json
+import os
 import pickle
 import re
 import sys
@@ -38,11 +40,14 @@ import extras  # noqa: E402  (C17: attribute re-ranking, degradation/restoration
 
 CLIP_NAME = "ViT-B/32"
 # Ưu tiên bản tái lập đầy đủ (OTI 100k ảnh) trong outputs/, nếu không có thì dùng data/ của repo
-_PHI_CANDIDATES = [OUTPUTS_DIR / "phi_models" / "phi_B32", REPO_DIR / "data" / "phi_models" / "phi_b32"]
+_PHI_CANDIDATES = [Path(p) for p in [os.environ.get("SEARLE_PHI_DIR", "")] if p] + [
+    OUTPUTS_DIR / "phi_models" / "phi_B32", REPO_DIR / "data" / "phi_models" / "phi_B32",
+    REPO_DIR / "data" / "phi_models" / "phi_b32"]  # Linux phân biệt hoa thường: thử cả phi_B32 và phi_b32
 PHI_DIR = next((p for p in _PHI_CANDIDATES if (p / "checkpoints").is_dir()), _PHI_CANDIDATES[-1])
 CKPT_DIR = PHI_DIR / "checkpoints"
 OTI_NAMES = next((p for p in [
     OUTPUTS_DIR / "oti_pseudo_tokens/imagenet/test/oti_B32/image_names.pkl",
+    REPO_DIR / "data/oti_pseudo_tokens/imagenet/test/oti_B32/image_names.pkl",
     REPO_DIR / "data/oti_pseudo_tokens/imagenet/test/oti_b32/image_names.pkl"] if p.exists()), None)
 UPLOAD_DIR = DEMO_DIR / "gallery"
 CACHE_FILE = DEMO_DIR / "cache" / "gallery.pt"
@@ -112,7 +117,7 @@ class Engine:
             print("[demo] load error:", self.error)
 
     @staticmethod
-    def list_ckpts() -> list[str]:
+    def list_ckpts() -> list:
         def key(p: str):
             m = re.search(r"phi_(\d+)\.pt", p)
             return (0, int(m.group(1))) if m else (1, 0)
@@ -745,4 +750,4 @@ def explain_result():
 if __name__ == "__main__":
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     threading.Thread(target=engine.load, daemon=True).start()
-    app.run(host="127.0.0.1", port=5050, debug=False, threaded=True)
+    app.run(host="127.0.0.1", port=int(os.environ.get("SEARLE_DEMO_PORT", "5050")), debug=False, threaded=True)
