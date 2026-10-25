@@ -1,0 +1,55 @@
+robust_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T08:19:32.418Z
+Dataset Version:
+rc2
+Metric:
+recall
+Recall@	Score (Accuracy Perc.)
+1	23.590
+2	34.867
+5	53.084
+10	66.892
+50	89.783
+
+subset_robust_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T08:22:21.255Z
+Dataset Version:
+rc2
+Metric:
+recall_subset
+RecallSubset@	Score (Accuracy Perc.)
+1	54.458
+2	76.000
+3	87.880
+
+final_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T08:22:43.627Z
+Dataset Version:
+rc2
+Metric:
+recall
+Recall@	Score (Accuracy Perc.)
+1	23.542
+2	35.301
+5	53.133
+10	67.133
+50	89.735
+
+subset_final_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T08:23:23.293Z
+Dataset Version:
+rc2
+Metric:
+recall_subset
+RecallSubset@	Score (Accuracy Perc.)
+1	54.434
+2	76.386
+3	87.976

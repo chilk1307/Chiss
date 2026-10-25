@@ -1,0 +1,54 @@
+searle_official_circo
+Recall@5: 19.75
+Recall@10: 28.12
+Recall@25: 39.5
+Recall@50: 50.75
+
+mAP@5: 9.36
+mAP@10: 9.95
+mAP@25: 11.13
+mAP@50: 11.85
+
+mAP@10 results for each semantic aspect:
+Cardinality: 7.54
+Addition: 10.36
+Negation: 6.67
+Direct Addressing: 11.54
+Compare & Change: 8.11
+Comparative Statement: 8.42
+Statement with Conjunction: 9.28
+Spatial Relations & Background: 11.18
+Viewpoint: 7.45
+
+
+
+searle_official_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T08:41:41.789Z
+Dataset Version:
+rc2
+Metric:
+recall
+Recall@	Score (Accuracy Perc.)
+1	23.325
+2	34.867
+5	52.892
+10	66.940
+50	89.807
+
+
+
+
+subset_searle_official_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T08:42:18.358Z
+Dataset Version:
+rc2
+Metric:
+recall_subset
+RecallSubset@	Score (Accuracy Perc.)
+1	53.904
+2	76.265
+3	87.783

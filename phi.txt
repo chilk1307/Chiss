@@ -1,0 +1,53 @@
+check_phi_B32_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T08:36:51.042Z
+Dataset Version:
+rc2
+Metric:
+recall
+Recall@	Score (Accuracy Perc.)
+1	23.349
+2	34.964
+5	52.651
+10	66.940
+50	89.735
+
+
+subset_check_phi_B32_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T08:37:36.795Z
+Dataset Version:
+rc2
+Metric:
+recall_subset
+RecallSubset@	Score (Accuracy Perc.)
+1	53.976
+2	76.145
+3	87.807
+
+
+
+
+phiB32_circo
+Recall@5: 20.12
+Recall@10: 27.88
+Recall@25: 40.38
+Recall@50: 51.88
+
+mAP@5: 9.44
+mAP@10: 9.79
+mAP@25: 11.05
+mAP@50: 11.76
+
+mAP@10 results for each semantic aspect:
+Cardinality: 7.22
+Addition: 10.32
+Negation: 5.8
+Direct Addressing: 11.31
+Compare & Change: 8.1
+Comparative Statement: 8.87
+Statement with Conjunction: 9.05
+Spatial Relations & Background: 10.76
+Viewpoint: 7.62

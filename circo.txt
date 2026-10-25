@@ -1,0 +1,45 @@
+final_circo
+Recall@5: 20.25
+Recall@10: 28.25
+Recall@25: 40.62
+Recall@50: 51.88
+
+mAP@5: 9.59
+mAP@10: 9.93
+mAP@25: 11.2
+mAP@50: 11.9
+
+mAP@10 results for each semantic aspect:
+Cardinality: 7.4
+Addition: 10.39
+Negation: 5.7
+Direct Addressing: 11.59
+Compare & Change: 8.16
+Comparative Statement: 9.06
+Statement with Conjunction: 9.21
+Spatial Relations & Background: 11.02
+Viewpoint: 7.57
+
+
+robust_circo
+
+Recall@5: 20.38
+Recall@10: 27.62
+Recall@25: 39.5
+Recall@50: 52.12
+
+mAP@5: 9.66
+mAP@10: 9.95
+mAP@25: 11.21
+mAP@50: 11.95
+
+mAP@10 results for each semantic aspect:
+Cardinality: 7.62
+Addition: 10.66
+Negation: 5.86
+Direct Addressing: 11.87
+Compare & Change: 7.71
+Comparative Statement: 8.58
+Statement with Conjunction: 9.23
+Spatial Relations & Background: 10.95
+Viewpoint: 7.56
