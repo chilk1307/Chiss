@@ -1,0 +1,55 @@
+subset_xl_attr_cirr
+Received timestamp (UTC):
+2026-10-25T11:11:16.144Z
+Dataset Version:
+rc2
+Metric:
+recall_subset
+RecallSubset@	Score (Accuracy Perc.)
+1	54.120
+2	75.446
+3	87.687
+
+
+subset_xl_cirr
+Received timestamp (UTC):
+2026-10-25T11:11:34.420Z
+Dataset Version:
+rc2
+Metric:
+recall_subset
+RecallSubset@	Score (Accuracy Perc.)
+1	53.759
+2	75.084
+3	87.542
+
+
+xl_attr_cirr
+Received timestamp (UTC):
+2026-10-25T11:12:30.111Z
+Dataset Version:
+rc2
+Metric:
+recall
+Recall@	Score (Accuracy Perc.)
+1	24.602
+2	36.241
+5	52.699
+10	66.410
+50	88.940
+
+
+xl_cirr
+Results
+Received timestamp (UTC):
+2026-10-25T11:13:09.270Z
+Dataset Version:
+rc2
+Metric:
+recall
+Recall@	Score (Accuracy Perc.)
+1	24.337
+2	35.735
+5	52.193
+10	66.024
+50	88.940

@@ -1,0 +1,46 @@
+xl_circo
+Recall@5: 23.5
+Recall@10: 32.75
+Recall@25: 45.25
+Recall@50: 55.5
+
+mAP@5: 11.66
+mAP@10: 12.72
+mAP@25: 14.32
+mAP@50: 15.11
+
+mAP@10 results for each semantic aspect:
+Cardinality: 10.27
+Addition: 13.94
+Negation: 8.86
+Direct Addressing: 14.91
+Compare & Change: 9.36
+Comparative Statement: 11.23
+Statement with Conjunction: 12.77
+Spatial Relations & Background: 14.22
+Viewpoint: 8.52
+
+
+
+
+xl_attr_circo
+Recall@5: 23.62
+Recall@10: 32.88
+Recall@25: 45.38
+Recall@50: 55.5
+
+mAP@5: 11.76
+mAP@10: 12.8
+mAP@25: 14.42
+mAP@50: 15.2
+
+mAP@10 results for each semantic aspect:
+Cardinality: 10.53
+Addition: 13.96
+Negation: 8.89
+Direct Addressing: 14.95
+Compare & Change: 9.33
+Comparative Statement: 11.41
+Statement with Conjunction: 12.86
+Spatial Relations & Background: 14.36
+Viewpoint: 8.62
