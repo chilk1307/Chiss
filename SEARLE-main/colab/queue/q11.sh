@@ -1,0 +1,42 @@
+#!/bin/bash
+# Queue 11 (25/10): the two contributions on a stronger backbone, with the released SEARLE-XL (CLIP ViT-L/14).
+# E9.0 SEARLE-XL baselines, E9.1 attribute re-ranking with the E2.7 flags (no re-tuning), E9.2 degraded reference
+# + restoration on CIRR, CIs, test files.
+source $DRIVE/queue/common.sh
+echo "===== queue 11 start $(date)"
+XL="--eval-type searle-xl $CACHE"
+FINAL=$(cat $R/E2-final-flags.txt)
+# --- E9.0 baselines
+run $R/E9.0-xl-cirr     $V $XL $CIRR --output-dir $R/E9.0-xl-cirr
+run $R/E9.0-xl-circo-ex $V $XL $CIRCO --exclude-reference --output-dir $R/E9.0-xl-circo-ex
+run $R/E9.0-xl-fiq-ex   $V $XL $FIQ --exclude-reference --output-dir $R/E9.0-xl-fiq-ex
+# --- E9.1 attribute re-ranking, same flags as phi_B32
+run $R/E9.1-xl-attr-cirr     $V $XL $CIRR $FINAL --output-dir $R/E9.1-xl-attr-cirr
+run $R/E9.1-xl-attr-circo-ex $V $XL $CIRCO --exclude-reference $FINAL --output-dir $R/E9.1-xl-attr-circo-ex
+run $R/E9.1-xl-attr-fiq-ex   $V $XL $FIQ --exclude-reference $FINAL --output-dir $R/E9.1-xl-attr-fiq-ex
+# --- E9.2 degraded reference (level 2), without and with the oracle restoration; mixed with the automatic rules
+for D in gauss_noise salt_pepper gauss_blur motion_blur jpeg low_light low_res color_cast; do
+  run $R/E9.2-xl-$D-none-cirr   $V $XL $CIRR --degrade $D:2 --output-dir $R/E9.2-xl-$D-none-cirr
+  run $R/E9.2-xl-$D-oracle-cirr $V $XL $CIRR --degrade $D:2 --restore oracle --output-dir $R/E9.2-xl-$D-oracle-cirr
+done
+for RS in none auto; do
+  run $R/E9.2-xl-mixed-$RS-cirr $V $XL $CIRR --degrade mixed --restore $RS --output-dir $R/E9.2-xl-mixed-$RS-cirr
+done
+# --- CIs
+run $R/E9.1-ci-cirr  $PY tools/bootstrap_ci.py --baseline $R/E9.0-xl-cirr --runs $R/E9.1-xl-attr-cirr --out $R/E9.1-ci-cirr
+run $R/E9.1-ci-circo $PY tools/bootstrap_ci.py --baseline $R/E9.0-xl-circo-ex --runs $R/E9.1-xl-attr-circo-ex --out $R/E9.1-ci-circo
+run $R/E9.1-ci-fiq   $PY tools/bootstrap_ci.py --baseline $R/E9.0-xl-fiq-ex --runs $R/E9.1-xl-attr-fiq-ex --out $R/E9.1-ci-fiq
+run $R/E9.2-ci-mixed $PY tools/bootstrap_ci.py --baseline $R/E9.2-xl-mixed-none-cirr --runs $R/E9.2-xl-mixed-auto-cirr --out $R/E9.2-ci-mixed
+# --- test files (CIRR and CIRCO servers)
+G="$PY src/generate_test_submission.py"
+SUB=$DRIVE/outputs/submissions
+run $R/E9.3-xl-cirr        $G $XL $CIRR  --submission-name xl_cirr        --output-dir $R/E9.3-xl-cirr
+run $R/E9.3-xl-attr-cirr   $G $XL $CIRR  $FINAL --submission-name xl_attr_cirr   --output-dir $R/E9.3-xl-attr-cirr
+run $R/E9.3-xl-circo       $G $XL $CIRCO --submission-name xl_circo       --output-dir $R/E9.3-xl-circo
+run $R/E9.3-xl-attr-circo  $G $XL $CIRCO $FINAL --submission-name xl_attr_circo  --output-dir $R/E9.3-xl-attr-circo
+for d in E9.3-xl-cirr E9.3-xl-attr-cirr E9.3-xl-circo E9.3-xl-attr-circo; do
+  for f in $R/$d/*.json; do case $(basename $f) in metrics.json) ;; *) cp $f $SUB/ ;; esac; done
+done
+ls $SUB
+$PY tools/collect_results.py --results-dir $R --out $R/summary.md > /dev/null 2>&1
+echo "===== queue 11 done $(date)"
