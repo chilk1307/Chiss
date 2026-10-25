@@ -244,3 +244,10 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 | `demo/app.py`, `demo/static/index.html` | Demo | Các API tìm kiếm, So sánh, Vì sao dùng câu đã dịch; kết quả trả thêm `translation`, giao diện hiện câu gốc → câu tiếng Anh. |
 | `demo/requirements.txt` | Demo | Thêm `transformers`, `sentencepiece`. |
 | `tools/generate_phrases_llm.py` | E10 | Chế độ instruct sinh nhiều khái niệm cùng lúc (`--batch-concepts`), trước đây từng khái niệm một. |
+
+### Kết quả q12 (E10, 25/10/2026, 12:48–16:25 UTC trên A100, không lượt nào hỏng)
+
+- Hàng đợi được tách thành `q12a.sh` (P2 và lượt đối chứng GPT-Neo đổi seed), `q12p3.sh` (P3, sinh chậm hơn khoảng 5 lần) và `q12c.sh` (seed 43–45 trên CIRCO), dùng chung `q12env.sh`.
+- Bộ câu (khái niệm dùng cho CIRR val): GPT-Neo 256 câu/khái niệm, 28 từ, distinct-2 0.37; P2 63 câu, 14 từ, 0.43; P3 17 câu, 14 từ, 0.64.
+- CIRCO val, OTI 350 bước, mAP@10 trung bình 4 seed: 6.89 / 7.93 / 7.97; khoảng tin cậy hai tầng (seed + truy vấn, `tools/seed_bootstrap.py`): P2 [−0.17; +2.36], P3 [+0.02; +2.33].
+- CIRR val (P2, P3 một seed; GPT-Neo hai seed 24.06 / 23.01): R@1 24.11 / 23.82, R@5 54.39 / 55.51, Rsubset@1 53.62 / 52.69.
