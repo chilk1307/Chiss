@@ -1,0 +1,58 @@
+From 78e1126164085b7d63f6691c7d3a93dc5fe924b3 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 25 Oct 2026 10:30:41 +0000
+Subject: [PATCH] README, CHANGES: SEARLE-XL (ViT-L/14) results (E9)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01SDKqTbeuDdQpKjDcafzPSf
+---
+ README.md              | 10 ++++++++++
+ SEARLE-main/CHANGES.md | 14 ++++++++++++++
+ 2 files changed, 24 insertions(+)
+
+diff --git a/README.md b/README.md
+index 591ae37..002d01d 100644
+--- a/README.md
++++ b/README.md
+@@ -42,6 +42,16 @@ Kết quả trên ảnh xấu (CIRR val R@1, trung bình 8 loại suy giảm ở
+ | φ_B32 + phục hồi đúng loại | 24.75 |
+ | Ảnh sạch (tham chiếu) | 25.47 |
+ 
++SEARLE-XL (φ công bố, CLIP ViT-L/14), val, giữ nguyên cấu hình chọn trên φ_B32:
++
++| | CIRR R@1 | CIRR R@5 | CIRR Rsubset@1 | CIRCO mAP@10* | FashionIQ R@10* |
++|---|---|---|---|---|---|
++| SEARLE-XL | 24.35 | 53.81 | 53.07 | 14.12 | 25.78 |
++| SEARLE-XL + kiểm chứng thuộc tính | **24.75** † | **54.25** † | **53.53** † | 14.25 | 26.17 |
++
++Trên ảnh xấu, SEARLE-XL chỉ mất trung bình 0.19 điểm R@1 (φ_B32: 1.40); phục hồi tự động trên ảnh xấu hỗn hợp
++tăng R@1 từ 24.13 lên 24.83 †.
++
+ Mọi con số đều lấy từ `MyDrive/SEARLE/results/<mã thí nghiệm>/metrics.json`. Báo cáo đầy đủ (Claude Docs) có thêm
+ phân tích lỗi, tiền xử lý, lọc tần số, các khoảng tin cậy và hạn chế.
+ 
+diff --git a/SEARLE-main/CHANGES.md b/SEARLE-main/CHANGES.md
+index c996d76..b00a580 100644
+--- a/SEARLE-main/CHANGES.md
++++ b/SEARLE-main/CHANGES.md
+@@ -209,3 +209,17 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
+ |---|---|---|
+ | `README.md` (gốc repo) | C19 | Tóm tắt đề tài, kết quả chính, cấu trúc, cách chạy lại. |
+ | `colab/queue/` | C19 | Các hàng đợi đã dùng để chạy toàn bộ thí nghiệm (`q1`–`q8`, `t1`–`t3`, `boot.sh`, `common.sh`) và hướng dẫn. |
++
++## 25/10/2026: SEARLE-XL (CLIP ViT-L/14), hàng đợi q11
++
++### Kiểm chứng
++
++- `colab/queue/q11.sh` chạy hết trên Colab A100 (09:30–10:15 UTC), không lượt nào hỏng.
++- File test `xl_cirr`, `xl_attr_cirr` (kèm `subset_`), `xl_circo`, `xl_attr_circo` ở `MyDrive/SEARLE/outputs/submissions/`.
++
++### Thêm
++
++| File | Việc | Nội dung |
++|---|---|---|
++| `colab/queue/q11.sh` | E9 | Đường cơ sở SEARLE-XL (E9.0), kiểm chứng thuộc tính với cờ của E2.7 (E9.1), ảnh xấu mức 2 có và không phục hồi (E9.2), khoảng tin cậy, file test (E9.3). |
++| `README.md` (gốc repo) | E9 | Bảng kết quả SEARLE-XL. |
+-- 
+2.43.0
+
