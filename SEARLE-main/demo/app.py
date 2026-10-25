@@ -37,6 +37,7 @@ from src.data_utils import targetpad_transform  # noqa: E402
 from src.encode_with_pseudo_tokens import encode_with_pseudo_tokens  # noqa: E402
 from src.phi import Phi  # noqa: E402
 import extras  # noqa: E402  (C17: attribute re-ranking, degradation/restoration, CBIR, occlusion map)
+import translate  # noqa: E402  (Vietnamese caption -> English before SEARLE)
 
 CLIP_NAME = "ViT-B/32"
 # Ưu tiên bản tái lập đầy đủ (OTI 100k ảnh) trong outputs/, nếu không có thì dùng data/ của repo
@@ -601,6 +602,8 @@ def search():
     if mode != "image" and not caption:
         return jsonify({"error": "Hãy nhập mô tả thay đổi (caption)."}), 400
     topk = max(1, min(int(request.form.get("topk", 12)), 60))
+    tr = translate.to_english(caption)
+    caption = tr["text"]
 
     ref_id = request.form.get("ref_id")
     exclude = None
@@ -616,7 +619,9 @@ def search():
             return jsonify({"error": "Hãy chọn ảnh tham chiếu."}), 400
     except Exception:  # noqa: BLE001
         return jsonify({"error": "Không đọc được ảnh tham chiếu."}), 400
-    return jsonify(engine.search(ref, caption, mode, topk, exclude))
+    out = engine.search(ref, caption, mode, topk, exclude)
+    out["translation"] = tr
+    return jsonify(out)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -665,7 +670,9 @@ def search2():
     except Exception as e:  # noqa: BLE001
         return jsonify({"error": str(e) or "Không đọc được ảnh tham chiếu."}), 400
     t0 = time.time()
-    out = {"mode": mode, "gallery_size": len(engine.items)}
+    tr = translate.to_english(caption)
+    caption = tr["text"]
+    out = {"mode": mode, "gallery_size": len(engine.items), "translation": tr}
     rgb = np.asarray(ref)
 
     # 2. degraded query -> restoration
@@ -713,7 +720,8 @@ def compare():
     bad = _check_ready()
     if bad:
         return bad
-    caption = request.form.get("caption", "").strip()
+    tr = translate.to_english(request.form.get("caption", ""))
+    caption = tr["text"]
     topk = max(1, min(int(request.form.get("topk", 6)), 24))
     try:
         ref, exclude = _reference_from_request()
@@ -727,7 +735,7 @@ def compare():
         sims, prompt, _ = engine.query_sims(ref, caption, mode)
         rows.append({"mode": mode, "prompt": prompt, "ms": int((time.time() - t0) * 1000),
                      "results": engine.top_results(sims, topk, exclude)})
-    return jsonify({"rows": rows})
+    return jsonify({"rows": rows, "translation": tr})
 
 
 @app.post("/api/explain")
@@ -742,7 +750,7 @@ def explain_result():
         ref, _ = _reference_from_request()
     except Exception as e:  # noqa: BLE001
         return jsonify({"error": str(e)}), 400
-    out = extras.occlusion_map(engine, ref, request.form.get("caption", ""), target)
+    out = extras.occlusion_map(engine, ref, translate.to_english(request.form.get("caption", ""))["text"], target)
     out["mask"], out["mask_kind"] = extras.mask_overlay(engine, target)
     return jsonify(out)
 

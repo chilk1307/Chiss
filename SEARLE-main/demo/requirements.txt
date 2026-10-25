@@ -9,3 +9,5 @@ ftfy
 regex
 tqdm
 setuptools<81
+transformers
+sentencepiece
