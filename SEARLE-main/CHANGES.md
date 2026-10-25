@@ -223,3 +223,24 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 |---|---|---|
 | `colab/queue/q11.sh` | E9 | Đường cơ sở SEARLE-XL (E9.0), kiểm chứng thuộc tính với cờ của E2.7 (E9.1), ảnh xấu mức 2 có và không phục hồi (E9.2), khoảng tin cậy, file test (E9.3). |
 | `README.md` (gốc repo) | E9 | Bảng kết quả SEARLE-XL. |
+
+## 25/10/2026: câu tiếng Việt trong demo, hàng đợi q12 (bộ câu GPT mới)
+
+### Kiểm chứng
+
+- `demo/translate.py` chạy trong venv Python 3.8 trên Colab A100 (transformers 4.24 + sentencepiece): "màu đỏ và có tay áo dài" → "red with long sleeves", "có hai con chó trên bãi cỏ" → "has two dogs on the lawn"; lần đầu 16 giây (tải mô hình), sau đó khoảng 0,2 giây mỗi câu. Câu không dấu (tiếng Anh) đi thẳng, không dịch.
+
+### Thêm
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `demo/translate.py` | Demo | Nhận ra câu tiếng Việt (đ, ă, â, ê, ô, ơ, ư hoặc dấu thanh) và dịch sang tiếng Anh bằng `Helsinki-NLP/opus-mt-vi-en` (CC-BY-4.0) trước khi vào SEARLE và bộ phân tích thuộc tính. `SEARLE_TRANSLATE=0` tắt, `SEARLE_TRANSLATE_MODEL` đổi mô hình; không tải được mô hình thì dùng nguyên câu và báo lý do. |
+| `colab/queue/q12.sh` | E10 | Sinh lại bộ câu GPT bằng Qwen2.5-1.5B (P2: câu mồi gốc; P3: bản instruct, câu tả chi tiết nhìn thấy được) cho khái niệm của ảnh CIRCO val và CIRR val, rồi OTI 350 bước so với bộ GPT-Neo 2.7B, kèm lượt đối chứng đổi seed và khoảng tin cậy. |
+
+### Sửa
+
+| File | Việc | Thay đổi |
+|---|---|---|
+| `demo/app.py`, `demo/static/index.html` | Demo | Các API tìm kiếm, So sánh, Vì sao dùng câu đã dịch; kết quả trả thêm `translation`, giao diện hiện câu gốc → câu tiếng Anh. |
+| `demo/requirements.txt` | Demo | Thêm `transformers`, `sentencepiece`. |
+| `tools/generate_phrases_llm.py` | E10 | Chế độ instruct sinh nhiều khái niệm cùng lúc (`--batch-concepts`), trước đây từng khái niệm một. |
