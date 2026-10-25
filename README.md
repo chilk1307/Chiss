@@ -17,7 +17,7 @@ Nhóm thêm hai lớp xử lý ảnh cổ điển lên trên SEARLE:
 
 | | CIRR R@1 | CIRR R@5 | CIRR Rsubset@1 | CIRCO mAP@10* | FashionIQ R@10* |
 |---|---|---|---|---|---|
-| SEARLE (OTI), tái lập | 25.66 | 55.47 | 55.08 | 9.89 | 23.01 |
+| SEARLE (φ công bố), chạy lại | 25.66 | 55.47 | 55.08 | 9.89 | 23.01 |
 | φ_B32, tái lập | 25.47 | 55.23 | 55.20 | 9.27 | 22.74 |
 | φ_B32 + kiểm chứng thuộc tính | **25.81** | **55.70** † | **55.56** † | 9.39 | 22.94 |
 | φ bền, ảnh sạch | 25.45 | 55.75 † | 54.68 | – | – |
