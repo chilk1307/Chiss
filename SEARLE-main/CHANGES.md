@@ -251,3 +251,17 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 - Bộ câu (khái niệm dùng cho CIRR val): GPT-Neo 256 câu/khái niệm, 28 từ, distinct-2 0.37; P2 63 câu, 14 từ, 0.43; P3 17 câu, 14 từ, 0.64.
 - CIRCO val, OTI 350 bước, mAP@10 trung bình 4 seed: 6.89 / 7.93 / 7.97; khoảng tin cậy hai tầng (seed + truy vấn, `tools/seed_bootstrap.py`): P2 [−0.17; +2.36], P3 [+0.02; +2.33].
 - CIRR val (P2, P3 một seed; GPT-Neo hai seed 24.06 / 23.01): R@1 24.11 / 23.82, R@5 54.39 / 55.51, Rsubset@1 53.62 / 52.69.
+
+## 15/11/2026: train lại φ với bộ câu P3 (hàng đợi q13, E11)
+
+### Kiểm chứng
+
+- `colab/queue/q13.sh` chạy hết trên A100 (13:23–18:41 UTC), không lượt nào hỏng: sinh câu P3 cho đủ 20.931 khái niệm (1,4 giờ), φ_B32_P3 100 epoch (3 giờ), đánh giá, khoảng tin cậy, file test `phiP3_cirr`, `subset_phiP3_cirr`, `phiP3_circo`.
+- Val so với φ_B32: CIRR R@1 −0.02 [−0.57; +0.53], R@5 +0.65 [+0.05; +1.24] (có ý nghĩa), Rsubset@1 +0.38; CIRCO mAP@10 +0.32 (ảnh tham chiếu trong gallery), +0.22 (bỏ ảnh tham chiếu); FashionIQ R@10 +0.26. Ngoài CIRR R@5, các mức tăng chưa có ý nghĩa.
+
+### Thêm
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `colab/queue/q13.sh` | E11 | Sinh câu P3 cho mọi khái niệm, bù khái niệm rỗng, train φ giống φ_B32 (siêu tham số đọc từ `hyperparameters.json` của φ_B32), đánh giá, khoảng tin cậy, file test. |
+| `tools/fill_phrases.py` | E11 | Bù câu cho khái niệm rỗng từ bộ khác (601 khái niệm, 3%). Không bù thì `train_phi.py` bốc lại cả batch 256 khái niệm mỗi khi trúng khái niệm rỗng: 45 phút/epoch thay vì 1,8 phút. |
