@@ -23,6 +23,13 @@ run $R/E11.0-stats-$SET $PY tools/phrases_stats.py --phrases $GP/$SET/concept_to
   --similar-concepts $DRIVE/outputs/similar_concepts/imagenet/test/ViT-B32_top_250_ensembling_image_texts.csv \
   --out $R/E11.0-stats-$SET
 
+# 601 concepts were left without a phrase (instruct output without the exact concept name). train_phi.py redraws a
+# whole batch of 256 concepts while one of them is empty, which made an epoch last 45 minutes: fill them from the
+# original set (tools/fill_phrases.py), the template "a photo of {concept}" when that has none either.
+SETF=${SET}f
+run $R/E11.0-fill-$SETF $PY tools/fill_phrases.py --phrases $GP/$SET/concept_to_phrases.pkl \
+  --fallback $GP/GPTNeo27B/concept_to_phrases.pkl --out-exp $SETF --out-root $GP --n 16
+
 # --- 2. phi, same recipe as phi_B32 (hyper-parameters copied from its hyperparameters.json when they exist)
 HP=$DRIVE/outputs/phi_models/phi_B32/hyperparameters.json
 EXTRA=$($PY - "$HP" <<'PYEOF'
@@ -41,7 +48,7 @@ PYEOF
 echo "phi_B32 hyper-parameters reused: $EXTRA"
 BASE="--clip-model-name ViT-B/32 --imagenet-dataset-path $DATA/ImageNet1K --cirr-dataset-path $DATA/CIRR --save-training"
 RESUME=""; [ -f data/phi_models/$EXP/checkpoints/resume.pt ] && RESUME="--resume"
-run $R/E11.1-train-$EXP $PY src/train_phi.py --exp-name $EXP $BASE --oti-exp-name oti_B32 --gpt-exp-name $SET \
+run $R/E11.1-train-$EXP $PY src/train_phi.py --exp-name $EXP $BASE --oti-exp-name oti_B32 --gpt-exp-name $SETF \
   --num-epochs 100 --validation-frequency 5 --features-cache-dir $DRIVE/cache/train_features $EXTRA $RESUME
 
 # --- 3. validation and CIs against phi_B32 (same settings as E1.7d / E1.7e / E1.8)
