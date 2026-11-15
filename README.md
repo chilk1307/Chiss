@@ -61,7 +61,8 @@ tăng R@1 từ 24.13 lên 24.83 †.
 
 Bộ câu GPT sinh lại bằng Qwen2.5-1.5B (OTI 350 bước, CIRCO val, mAP@10, trung bình 4 seed): bộ gốc GPT-Neo 2.7B
 6.89, P2 (câu mồi gốc) 7.93, P3 (instruct, tả chi tiết nhìn thấy) 7.97 †. Trên CIRR (1 seed) mức tăng nhỏ và OTI vẫn
-thấp hơn φ_B32.
+thấp hơn φ_B32. Train lại φ với câu P3 (φ_B32_P3, giữ token OTI cũ): CIRR R@1 25.45 (±0), R@5 55.87 (+0.65 †),
+Rsubset@1 55.58 (+0.38), CIRCO mAP@10 7.47 (+0.32), FashionIQ R@10 23.01 (+0.26).
 
 Mọi con số đều lấy từ `MyDrive/SEARLE/results/<mã thí nghiệm>/metrics.json`. Báo cáo đầy đủ (Claude Docs) có thêm
 phân tích lỗi, tiền xử lý, lọc tần số, các khoảng tin cậy và hạn chế.
