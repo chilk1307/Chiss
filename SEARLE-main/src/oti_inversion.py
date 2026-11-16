@@ -150,6 +150,11 @@ def oti_inversion(args):
         dataset = CIRCODataset(args.dataset_path, args.split, 'relative', preprocess)
     elif args.dataset.lower() == 'imagenet':
         dataset = ImageNetDataset(args.dataset_path, args.split, preprocess)
+        if args.image_names:  # one shard only, e.g. the image_names.pkl of oti_B32_s0
+            with open(args.image_names, 'rb') as f:
+                wanted = set(pickle.load(f))
+            dataset.images_path = [p for p in dataset.images_path if p.name in wanted]
+            print(f"--image-names: {len(dataset.images_path)} of the {len(wanted)} listed images found", flush=True)
     else:
         raise ValueError("dataset should be in ['fashioniq', 'cirr', 'circo', 'imagenet']")
 
@@ -368,6 +373,8 @@ def main():
                         help="How the concept is replaced by $ in the GPT phrases (gpt_phrases_utils.py)")
     parser.add_argument("--concept-filter", type=str, default='legacy', choices=CONCEPT_FILTER,
                         help="Drop whole concepts (legacy) or only the unusable phrases (per-phrase)")
+    parser.add_argument("--image-names", type=str, default=None,
+                        help="ImageNet only: pickled list of image file names to invert (one shard of a long run)")
 
     args = parser.parse_args()
     if args.init == 'phi' and not args.init_phi_exp_name:
