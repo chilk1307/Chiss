@@ -37,13 +37,17 @@ run $R/E12.0-oti-$S $PY src/oti_inversion.py --exp-name $EXP --clip-model-name V
   --dataset-path $DATA/ImageNet1K --split test --gpt-exp-name $SET --image-names $OTI_ROOT/oti_B32_$S/image_names.pkl \
   --init random --learning-rate 0.02 --save-frequency 5 $OEXTRA $RES
 
-# --- 2. once the 3 parts are done (whichever part finishes last does this)
+# --- 2. once the 3 parts are done (whichever part finishes last does this; the parts can also run at the same
+#        time on one GPU, OTI alone does not use all of an A100)
 for s in s0 s1 s2; do
   if [ ! -f $R/E12.0-oti-$s/.done ]; then
     echo "part $PART done; waiting for $s (run its part in another session)"
     echo "===== queue 14 part $PART done $(date)"; exit 0
   fi
 done
+# several parts may run at the same time (same runtime or not): only one of them goes on (delete
+# $R/E12.1-lock to retry after a failure)
+mkdir $R/E12.1-lock 2>/dev/null || { echo "another part does the merge and the training"; echo "===== queue 14 part $PART done $(date)"; exit 0; }
 run $R/E12.1-merge $PY tools/merge_oti.py --shards oti_B32_P3_s0,oti_B32_P3_s1,oti_B32_P3_s2 --out oti_B32_P3
 
 HP=$DRIVE/outputs/phi_models/phi_B32/hyperparameters.json
