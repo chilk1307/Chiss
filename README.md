@@ -30,9 +30,10 @@ Server test chính thức (25/10/2026; CIRR rc2):
 |---|---|---|---|---|---|
 | SEARLE (φ công bố), chạy lại | 23.33 | 52.89 | 53.90 | 9.36 | 9.95 |
 | φ_B32 | 23.35 | 52.65 | 53.98 | 9.44 | 9.79 |
-| φ_B32 + kiểm chứng thuộc tính | 23.54 | **53.13** | 54.43 | 9.59 | 9.93 |
-| φ bền | **23.59** | 53.08 | **54.46** | **9.66** | 9.95 |
-| φ_B32_P3 (câu GPT sinh lại, 16/11) | 23.40 | 52.60 | 54.31 | 9.60 | **10.06** |
+| φ_B32 + kiểm chứng thuộc tính | 23.54 | 53.13 | 54.43 | 9.59 | 9.93 |
+| φ bền | 23.59 | 53.08 | 54.46 | 9.66 | 9.95 |
+| φ_B32_P3 (câu GPT sinh lại, 16/11) | 23.40 | 52.60 | 54.31 | 9.60 | 10.06 |
+| φ_B32_P3oti (câu P3 cho cả OTI, 17/11) | **24.05** | **53.54** | **54.75** | **9.73** | **10.21** |
 
 Kết quả trên ảnh xấu (CIRR val R@1, trung bình 8 loại suy giảm ở mức 2):
 
@@ -64,6 +65,10 @@ Bộ câu GPT sinh lại bằng Qwen2.5-1.5B (OTI 350 bước, CIRCO val, mAP@10
 6.89, P2 (câu mồi gốc) 7.93, P3 (instruct, tả chi tiết nhìn thấy) 7.97 †. Trên CIRR (1 seed) mức tăng nhỏ và OTI vẫn
 thấp hơn φ_B32. Train lại φ với câu P3 (φ_B32_P3, giữ token OTI cũ): CIRR R@1 25.45 (±0), R@5 55.87 (+0.65 †),
 Rsubset@1 55.58 (+0.38), CIRCO mAP@10 7.47 (+0.32), FashionIQ R@10 23.01 (+0.26).
+Chạy lại cả OTI trên 100k ảnh ImageNet bằng câu P3 rồi train φ (φ_B32_P3oti, E12, 17,8 giờ OTI trên A100): CIRCO
+mAP@10 8.12 (+0.97 †), bỏ ảnh tham chiếu 10.68 (+1.40 †), CIRR R@1 24.97 (−0.50), R@5 55.99 (+0.77 †), FashionIQ
+R@10 23.24 (+0.50). Trên test, φ_B32_P3oti tốt nhất ở mọi cột (CIRR R@1 +0.70, CIRCO mAP@10 +0.42 so với
+φ_B32). Kết quả E12 nằm trong `MyDrive/SEARLE_work` của tài khoản Colab thứ hai.
 
 Mọi con số đều lấy từ `MyDrive/SEARLE/results/<mã thí nghiệm>/metrics.json`. Báo cáo đầy đủ (Claude Docs) có thêm
 phân tích lỗi, tiền xử lý, lọc tần số, các khoảng tin cậy và hạn chế.

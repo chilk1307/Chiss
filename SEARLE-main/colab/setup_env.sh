@@ -9,7 +9,7 @@
 set -euo pipefail
 
 RUNNER="${1:-${RUNNER:-unknown}}"
-DRIVE=/content/drive/MyDrive/SEARLE
+DRIVE=${SEARLE_DRIVE:-/content/drive/MyDrive/SEARLE}  # another Google account: the shortcut to the shared folder
 DATA=/content/data
 REPO=/content/XLA_SEARLE
 SRC=$REPO/SEARLE-main

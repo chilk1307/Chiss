@@ -10,6 +10,10 @@
 PART=${1:?usage: bash q14.sh 1|2|3}
 case $PART in 1|2|3) ;; *) echo "part must be 1, 2 or 3"; exit 1 ;; esac
 source /content/env.sh; source $DRIVE/queue/common.sh
+# Another Google account writing into the shared folder: Drive (DriveFS) hides the files it creates there, so with
+# SEARLE_WORK set (a folder of that account's own Drive) results, tokens, phi and test files go there instead; the
+# inputs (phrases, concepts, old shards, baselines copied by the notebook) are still read from $DRIVE.
+if [ -n "${SEARLE_WORK:-}" ]; then R=$SEARLE_WORK/results; mkdir -p $R; fi
 S=s$((PART - 1))
 SET=P3_qwen15i_allf
 OTI_ROOT=data/oti_pseudo_tokens/imagenet/test
@@ -85,7 +89,7 @@ run $R/E12.4-ci-fiq      $PY tools/bootstrap_ci.py --baseline $R/E1.8-phiB32-fiq
   --runs $R/E11.2-phi_B32_P3-fiq-ex $R/E12.3-$PHIX-fiq-ex --out $R/E12.4-ci-fiq
 
 G="$PY src/generate_test_submission.py"
-SUB=$DRIVE/outputs/submissions
+SUB=${SEARLE_WORK:-$DRIVE}/outputs/submissions; mkdir -p $SUB
 run $R/E12.5-test-cirr  $G $P $CIRR  --submission-name phiP3oti_cirr  --output-dir $R/E12.5-test-cirr
 run $R/E12.5-test-circo $G $P $CIRCO --submission-name phiP3oti_circo --output-dir $R/E12.5-test-circo
 for d in E12.5-test-cirr E12.5-test-circo; do

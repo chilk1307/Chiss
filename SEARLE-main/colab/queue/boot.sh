@@ -3,7 +3,7 @@
 # code (cell 2), venv (cell 3), data (cell 4) incl. the local CIRCO copy, saved code changes, then every queue.
 #   bash /content/drive/MyDrive/SEARLE/queue/boot.sh > /content/boot.log 2>&1
 set -u
-DRIVE=/content/drive/MyDrive/SEARLE
+DRIVE=${SEARLE_DRIVE:-/content/drive/MyDrive/SEARLE}  # another Google account: the shortcut to the shared folder
 Q=$DRIVE/queue
 REPO=/content/XLA_SEARLE
 echo "[$(date +%H:%M)] boot start"
@@ -29,7 +29,7 @@ if [ "$(ls -f $L/COCO2017_unlabeled/unlabeled2017 2>/dev/null | grep -c jpg)" -l
 fi
 echo "CIRCO_local: $(ls -f $L/COCO2017_unlabeled/unlabeled2017 | grep -c jpg) images"
 
-for s in t1 t3 q1 q2 q3 t2 q4 q5 q6; do
+for s in ${SEARLE_BOOT_QUEUES-t1 t3 q1 q2 q3 t2 q4 q5 q6}; do  # SEARLE_BOOT_QUEUES="" starts none
   pgrep -f "queue/$s.sh" > /dev/null && echo "$s already running" || { nohup bash $Q/$s.sh >> $Q/$s.log 2>&1 & echo "$s started"; sleep 2; }
 done
 echo "[$(date +%H:%M)] boot done"

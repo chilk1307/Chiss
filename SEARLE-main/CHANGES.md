@@ -265,3 +265,22 @@ Trên dữ liệu thật, Hòa kiểm tra lại ở H5 (CIRR R@1 phải là 25.6
 |---|---|---|
 | `colab/queue/q13.sh` | E11 | Sinh câu P3 cho mọi khái niệm, bù khái niệm rỗng, train φ giống φ_B32 (siêu tham số đọc từ `hyperparameters.json` của φ_B32), đánh giá, khoảng tin cậy, file test. |
 | `tools/fill_phrases.py` | E11 | Bù câu cho khái niệm rỗng từ bộ khác (601 khái niệm, 3%). Không bù thì `train_phi.py` bốc lại cả batch 256 khái niệm mỗi khi trúng khái niệm rỗng: 45 phút/epoch thay vì 1,8 phút. |
+
+## 16–17/11/2026: chạy lại OTI bằng bộ câu P3 rồi train φ (hàng đợi q14, E12)
+
+### Kiểm chứng
+
+- `colab/queue/q14.sh` chạy 3 phần song song trên một A100 của tài khoản Colab thứ hai (16/11 06:00 – 17/11 02:58 UTC), không lượt nào hỏng: OTI 3 × 33.333 ảnh (17,8 giờ, 61 giây/batch, GPU khoảng 95%), gộp thành `oti_B32_P3`, φ_B32_P3oti 100 epoch (3 giờ), đánh giá, khoảng tin cậy, file test `phiP3oti_cirr`, `subset_phiP3oti_cirr`, `phiP3oti_circo`.
+- Val so với φ_B32: CIRCO mAP@10 +0.97 [+0.12; +1.86], bỏ ảnh tham chiếu +1.40 [+0.16; +2.70], mAP@25/50 cũng có ý nghĩa; CIRCO R@5 −3.18 (có ý nghĩa); CIRR R@1 −0.50 [−1.17; +0.19], R@5 +0.77 [+0.02; +1.48], R@50 +0.45 (có ý nghĩa); FashionIQ R@10 +0.50 [−0.00; +1.03] (dress +1.14, có ý nghĩa).
+- Test (server CIRR rc2 / CIRCO, 17/11): CIRR R@1 24.05 (+0.70 so với φ_B32), R@5 53.54 (+0.89), Rsubset@1 54.75 (+0.77); CIRCO mAP@10 10.21 (+0.42). Cao nhất trong các lần chạy B/32 của đề tài ở mọi chỉ số chính.
+- Lần chạy đầu ghi thẳng vào thư mục SEARLE của tài khoản chính (được chia sẻ): Google Drive trên Colab ẩn hoặc báo "deleted" các file tài khoản thứ hai tạo ở đó, nên phải chạy lại từ đầu với `SEARLE_WORK`.
+
+### Thêm / sửa
+
+| File | Việc | Nội dung |
+|---|---|---|
+| `colab/queue/q14.sh` | E12 | `bash q14.sh 1\|2\|3`: OTI một phần (ảnh của shard cũ, siêu tham số đọc từ `hyperparameters.json` của shard cũ, lưu mỗi 5 batch, chạy lại thì tiếp tục). Phần xong cuối (khoá `E12.1-lock`) gộp, train φ, đánh giá, khoảng tin cậy, file test. `SEARLE_WORK` = thư mục Drive riêng của tài khoản đang chạy. |
+| `src/oti_inversion.py` | E12 | `--image-names`: chỉ đảo ngược các ảnh ImageNet có trong danh sách pickle. |
+| `colab/setup_env.sh`, `colab/queue/boot.sh` | E12 | `SEARLE_DRIVE` (thư mục SEARLE khác, ví dụ shortcut từ tài khoản khác), `SEARLE_BOOT_QUEUES` (danh sách hàng đợi khởi động, rỗng = không chạy hàng đợi cũ). |
+| `colab/E12_OTI_3_phan.ipynb` | E12 | Notebook chạy 3 phần (`PARTS`, `DRIVE_DIR`). |
+
